@@ -138,7 +138,7 @@ export default function Home() {
             </svg>
             CALL NEXT
           </button>
-          <button className="action-btn action-btn--join" id="join-game-button">
+          <button className="action-btn action-btn--join" id="join-game-button" onClick={() => navigate('/feed')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
               <polyline points="10 17 15 12 10 7" />
