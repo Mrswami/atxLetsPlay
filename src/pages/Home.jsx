@@ -4,12 +4,15 @@ import { useAuth } from '../contexts/AuthContext';
 import SearchBar from '../components/SearchBar';
 import Avatar from '../components/Avatar';
 import AustinMap from '../components/AustinMap';
+import CreateGameModal from '../components/CreateGameModal';
 import './Home.css';
 
 export default function Home() {
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   const containerRef = useRef(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [activeDistrict, setActiveDistrict] = useState(null);
   const [scrollProgress, setScrollProgress] = useState(0); // 0 = dashboard, 1 = full map
   const [mapLocked, setMapLocked] = useState(false);
 
@@ -71,7 +74,8 @@ export default function Home() {
   }
 
   function handleDistrictClick(district) {
-    console.log('District clicked:', district.name);
+    setActiveDistrict(district);
+    setShowCreateModal(true);
   }
 
   // Derived values from scroll progress
@@ -126,7 +130,7 @@ export default function Home() {
 
         {/* Quick Actions */}
         <div className="home-actions">
-          <button className="action-btn action-btn--create" id="create-game-button">
+          <button className="action-btn action-btn--create" id="create-game-button" onClick={() => setShowCreateModal(true)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="16" />
@@ -171,6 +175,14 @@ export default function Home() {
 
       {/* Scroll spacer — creates the scroll distance for the zoom effect */}
       {!mapLocked && <div className="scroll-spacer" />}
+
+      {showCreateModal && (
+        <CreateGameModal
+          district={activeDistrict}
+          onClose={() => { setShowCreateModal(false); setActiveDistrict(null); }}
+          onSuccess={() => console.log('Game created!')}
+        />
+      )}
     </div>
   );
 }
