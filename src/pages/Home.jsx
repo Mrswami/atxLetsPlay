@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SearchBar from '../components/SearchBar';
 import Avatar from '../components/Avatar';
-import AustinMap from '../components/AustinMap';
+import AustinMap3D from '../components/AustinMap3D';
 import CreateGameModal from '../components/CreateGameModal';
 import './Home.css';
 
@@ -156,9 +156,10 @@ export default function Home() {
           transform: `scale(${mapScale}) translateY(${mapTranslateY}vh)`,
         }}
       >
-        <AustinMap
+        <AustinMap3D
           onDistrictClick={handleDistrictClick}
           activeGames={activeGames}
+          scrollProgress={scrollProgress}
         />
       </div>
 

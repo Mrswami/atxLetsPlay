@@ -6,9 +6,17 @@ import './CreateGameModal.css';
 
 const SPORTS = ['🏀 Basketball', '🏐 Volleyball', '⚽ Soccer', '🎾 Tennis', '🏓 Ping Pong', '🏸 Badminton'];
 
+// ─── AUSTIN VERIFIED VENUES ───
+const VERIFIED_VENUES = {
+  'mueller': ['Mueller Lake Park', 'Dave Terry Field', 'Northwest Park'],
+  'hyde-park': ['Shipe Park'],
+  'downtown': ['Pease District Park (Kings of the Court)', 'Pan Am Park', 'Zilker Park (Great Lawn)'],
+  'south-congress': ['South Austin Rec Center', 'Zilker Park (Sand VB)', 'Little Stacy Park']
+};
+
 export default function CreateGameModal({ district, onClose, onSuccess }) {
   const { user, userProfile } = useAuth();
-  const [step, setStep] = useState(1); // 3-step flow
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -18,6 +26,8 @@ export default function CreateGameModal({ district, onClose, onSuccess }) {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [vibeNote, setVibeNote] = useState('');
+
+  const verifiedOptions = VERIFIED_VENUES[district?.id] || [];
 
   async function handleSubmit() {
     if (!sport || !courtName || !date || !time) {
@@ -63,7 +73,6 @@ export default function CreateGameModal({ district, onClose, onSuccess }) {
             <h2 className="modal-title">CALL NEXT</h2>
             {district && <span className="modal-district">{district.name}</span>}
           </div>
-          {/* Step indicators */}
           <div className="modal-steps">
             {[1, 2, 3].map(s => (
               <div key={s} className={`step-dot ${step >= s ? 'active' : ''}`} />
@@ -88,10 +97,26 @@ export default function CreateGameModal({ district, onClose, onSuccess }) {
             </div>
 
             <p className="modal-label" style={{ marginTop: '1.5rem' }}>WHERE AT?</p>
+            
+            {/* Verified Venue Suggestions */}
+            {verifiedOptions.length > 0 && (
+              <div className="venue-suggestions">
+                {verifiedOptions.map(venue => (
+                  <button 
+                    key={venue} 
+                    className={`venue-chip ${courtName === venue ? 'selected' : ''}`}
+                    onClick={() => setCourtName(venue)}
+                  >
+                    📍 {venue}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <input
               className="modal-input"
               type="text"
-              placeholder="Court or park name..."
+              placeholder={verifiedOptions.length > 0 ? "Or type a custom court..." : "Court or park name..."}
               value={courtName}
               onChange={e => setCourtName(e.target.value)}
             />
@@ -138,7 +163,6 @@ export default function CreateGameModal({ district, onClose, onSuccess }) {
               rows={3}
             />
 
-            {/* Confirmation card */}
             <div className="confirm-card">
               <div className="confirm-row">
                 <span className="confirm-label">Sport</span>

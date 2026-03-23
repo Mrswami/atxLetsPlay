@@ -22,6 +22,13 @@ export function useAuth() {
   return ctx;
 }
 
+// ─── HELPER: HANDLE GENERATOR ───
+const generateHandle = (name) => {
+  const cleanName = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  const suffix = Math.floor(100 + Math.random() * 900); // 3-digit random for uniqueness
+  return `@${cleanName}_${suffix}`;
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -29,14 +36,12 @@ export function AuthProvider({ children }) {
 
   // ─── MAGIC LINK LOGIC ───
   const actionCodeSettings = {
-    // The link user is redirected to when they click the email.
     url: window.location.origin,
     handleCodeInApp: true,
   };
 
   async function sendMagicLink(email) {
     await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-    // Save email locally to avoid asking the user again on the same device
     window.localStorage.setItem('emailForSignIn', email);
   }
 
@@ -44,7 +49,6 @@ export function AuthProvider({ children }) {
     if (isSignInWithEmailLink(auth, window.location.href)) {
       let email = window.localStorage.getItem('emailForSignIn');
       if (!email) {
-        // Different device/browser? Ask for email
         email = window.prompt('Please provide your email for verification');
       }
       const result = await signInWithEmailLink(auth, email, window.location.href);
@@ -53,10 +57,8 @@ export function AuthProvider({ children }) {
     }
     return null;
   }
-  // ────────────────────────
 
   useEffect(() => {
-    // Check for magic link return on app load
     completeMagicLinkSignIn().catch((err) => {
       console.error('Magic link sign-in error:', err);
     });
@@ -69,10 +71,13 @@ export function AuthProvider({ children }) {
         if (profileSnap.exists()) {
           setUserProfile(profileSnap.data());
         } else {
-          // If profile missing (e.g. first magic link login or Google), create it
+          // AUTO-GEN PROFILE (FOR GOOGLE / MAGIC LINK FIRST TIME)
+          const name = firebaseUser.displayName || 'Player';
           const profileData = {
             uid: firebaseUser.uid,
-            displayName: firebaseUser.displayName || 'Player',
+            displayName: name,
+            handle: generateHandle(name),
+            role: 'player', // Default Role
             email: firebaseUser.email || '',
             avatarUrl: firebaseUser.photoURL || '',
             district: '',
@@ -94,15 +99,23 @@ export function AuthProvider({ children }) {
   async function signup(email, password, displayName) {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName });
-    await setDoc(doc(db, 'users', cred.user.uid), {
+    
+    // Create Profile with Auto-Gen Handle
+    const profileData = {
+      uid: cred.user.uid,
       displayName,
+      handle: generateHandle(displayName),
+      role: 'player', // Default Role
       email,
       avatarUrl: '',
       district: '',
       xp: 0,
       gamesPlayed: 0,
       createdAt: serverTimestamp(),
-    });
+    };
+
+    await setDoc(doc(db, 'users', cred.user.uid), profileData);
+    setUserProfile(profileData);
     return cred.user;
   }
 
@@ -115,16 +128,23 @@ export function AuthProvider({ children }) {
     const cred = await signInWithPopup(auth, provider);
     const profileRef = doc(db, 'users', cred.user.uid);
     const profileSnap = await getDoc(profileRef);
+    
     if (!profileSnap.exists()) {
-      await setDoc(profileRef, {
-        displayName: cred.user.displayName || '',
+      const name = cred.user.displayName || 'Player';
+      const profileData = {
+        uid: cred.user.uid,
+        displayName: name,
+        handle: generateHandle(name),
+        role: 'player',
         email: cred.user.email || '',
         avatarUrl: cred.user.photoURL || '',
         district: '',
         xp: 0,
         gamesPlayed: 0,
         createdAt: serverTimestamp(),
-      });
+      };
+      await setDoc(profileRef, profileData);
+      setUserProfile(profileData);
     }
     return cred.user;
   }
