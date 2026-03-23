@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrthographicCamera, Html } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import './AustinMap3D.css';
 
@@ -134,14 +134,14 @@ function GridLines() {
 // ─── CAMERA ZOOM CONTROLLER ───
 function CameraController({ scrollProgress }) {
   const { camera } = useThree();
-  const targetPos = useRef(new THREE.Vector3(8, 9, 8));
-  const targetZoom = useRef(80);
 
-  useFrame((_, delta) => {
-    // Zoom in as scroll increases (overview → close)
-    const zoom = 80 + scrollProgress * 60; // 80 → 140
-    targetZoom.current += (zoom - targetZoom.current) * delta * 4;
-    camera.zoom = targetZoom.current;
+  useFrame(() => {
+    // Keep camera always looking at scene center
+    camera.lookAt(0, 0, 0);
+
+    // Zoom in as scroll increases: 60 (overview) → 120 (close-up)
+    const targetZoom = 60 + scrollProgress * 60;
+    camera.zoom += (targetZoom - camera.zoom) * 0.08;
     camera.updateProjectionMatrix();
   });
 
@@ -155,30 +155,24 @@ export default function AustinMap3D({ onDistrictClick, activeGames, scrollProgre
       <Canvas
         shadows
         dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ antialias: true }}
+        camera={{ position: [8, 9, 8], zoom: 60, near: 0.1, far: 200 }}
+        orthographic
       >
-        {/* Isometric-style orthographic camera at 45° */}
-        <OrthographicCamera
-          makeDefault
-          position={[8, 9, 8]}
-          zoom={80}
-          near={0.1}
-          far={100}
-        />
-
         <CameraController scrollProgress={scrollProgress} />
 
         {/* Lighting */}
-        <ambientLight intensity={0.6} />
+        <ambientLight intensity={0.7} />
         <directionalLight
           position={[5, 12, 5]}
-          intensity={1.2}
+          intensity={1.4}
           castShadow
           shadow-mapSize={[1024, 1024]}
         />
-        <pointLight position={[-4, 6, -4]} intensity={0.4} color="#6366f1" />
+        <pointLight position={[-4, 6, -4]} intensity={0.5} color="#6366f1" />
 
         {/* Scene */}
+        <color attach="background" args={['#060c14']} />
         <Ground />
         <GridLines />
 
