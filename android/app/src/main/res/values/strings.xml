@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ATX Let\'s Play</string>
+    <string name="title_activity_main">ATX Let\'s Play</string>
+    <string name="package_name">com.atxletsplay.app</string>
+    <string name="custom_url_scheme">com.atxletsplay.app</string>
+</resources>

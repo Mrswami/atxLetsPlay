@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "739922410802",
+    "project_id": "atxletsplay",
+    "storage_bucket": "atxletsplay.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:739922410802:android:e209c256b09fc3e136ab2b",
+        "android_client_info": {
+          "package_name": "com.atxletsplay.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "739922410802-6po5l9u8e19oc4ieidlkp8mi8oasv3cr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWV9meGbWsjlDx3PxXw2dPoa91PmcFIzw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "739922410802-6po5l9u8e19oc4ieidlkp8mi8oasv3cr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
