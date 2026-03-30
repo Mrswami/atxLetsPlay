@@ -91,6 +91,6 @@ jobs:
       - name: Upload APK to Firebase App Distribution
         uses: w9jds/firebase-action@master
         with:
-          args: appdistribution:distribute android/app/build/outputs/apk/debug/app-debug.apk --app ${{ secrets.FIREBASE_APP_ID_ANDROID }}
+          args: appdistribution:distribute android/app/build/outputs/apk/debug/app-debug.apk --app ${{ secrets.FIREBASE_APP_ID_ANDROID }} --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
