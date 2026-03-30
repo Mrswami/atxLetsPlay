@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
+import GameFeed from './pages/GameFeed';
 import Loading from './components/Loading';
 
 function ProtectedRoute({ children }) {
@@ -30,6 +31,14 @@ export default function AppRouter() {
           element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/feed"
+          element={
+            <ProtectedRoute>
+              <GameFeed />
             </ProtectedRoute>
           }
         />

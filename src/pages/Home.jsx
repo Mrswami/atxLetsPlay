@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SearchBar from '../components/SearchBar';
 import Avatar from '../components/Avatar';
-import AustinMap from '../components/AustinMap';
+import AustinMap3D from '../components/AustinMap3D';
+import CreateGameModal from '../components/CreateGameModal';
 import './Home.css';
 
 export default function Home() {
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   const containerRef = useRef(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [activeDistrict, setActiveDistrict] = useState(null);
   const [scrollProgress, setScrollProgress] = useState(0); // 0 = dashboard, 1 = full map
   const [mapLocked, setMapLocked] = useState(false);
 
@@ -71,7 +74,8 @@ export default function Home() {
   }
 
   function handleDistrictClick(district) {
-    console.log('District clicked:', district.name);
+    setActiveDistrict(district);
+    setShowCreateModal(true);
   }
 
   // Derived values from scroll progress
@@ -126,7 +130,7 @@ export default function Home() {
 
         {/* Quick Actions */}
         <div className="home-actions">
-          <button className="action-btn action-btn--create" id="create-game-button">
+          <button className="action-btn action-btn--create" id="create-game-button" onClick={() => setShowCreateModal(true)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="16" />
@@ -134,7 +138,7 @@ export default function Home() {
             </svg>
             CALL NEXT
           </button>
-          <button className="action-btn action-btn--join" id="join-game-button">
+          <button className="action-btn action-btn--join" id="join-game-button" onClick={() => navigate('/feed')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
               <polyline points="10 17 15 12 10 7" />
@@ -152,9 +156,10 @@ export default function Home() {
           transform: `scale(${mapScale}) translateY(${mapTranslateY}vh)`,
         }}
       >
-        <AustinMap
+        <AustinMap3D
           onDistrictClick={handleDistrictClick}
           activeGames={activeGames}
+          scrollProgress={scrollProgress}
         />
       </div>
 
@@ -171,6 +176,14 @@ export default function Home() {
 
       {/* Scroll spacer — creates the scroll distance for the zoom effect */}
       {!mapLocked && <div className="scroll-spacer" />}
+
+      {showCreateModal && (
+        <CreateGameModal
+          district={activeDistrict}
+          onClose={() => { setShowCreateModal(false); setActiveDistrict(null); }}
+          onSuccess={() => console.log('Game created!')}
+        />
+      )}
     </div>
   );
 }
