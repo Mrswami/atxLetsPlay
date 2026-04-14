@@ -21,9 +21,11 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        working-directory: web
 
       - name: Build
         run: npm run build
+        working-directory: web
 
   deploy:
     name: Deploy to Firebase Hosting
@@ -41,9 +43,11 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        working-directory: web
 
       - name: Build
         run: npm run build
+        working-directory: web
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -51,7 +55,8 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           channelId: live
-          projectId: '${{ secrets.FIREBASE_PROJECT_ID }}'
+          projectId: '${{ secrets.FIREBASE_PROJECT_ID || 'atxletsplay' }}'
+          entryPoint: web
 
   distribute-android:
     name: Build & Distribute Android
@@ -69,12 +74,15 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        working-directory: web
 
       - name: Build Web
         run: npm run build
+        working-directory: web
 
       - name: Capacitor Sync
         run: npx cap sync android
+        working-directory: web
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -87,10 +95,11 @@ jobs:
         run: |
           cd android
           ./gradlew assembleDebug
+        working-directory: web
 
       - name: Upload APK to Firebase App Distribution
         uses: w9jds/firebase-action@master
         with:
-          args: appdistribution:distribute android/app/build/outputs/apk/debug/app-debug.apk --app ${{ secrets.FIREBASE_APP_ID_ANDROID }} --project ${{ secrets.FIREBASE_PROJECT_ID }}
+          args: appdistribution:distribute web/android/app/build/outputs/apk/debug/app-debug.apk --app ${{ secrets.FIREBASE_APP_ID_ANDROID }} --project ${{ secrets.FIREBASE_PROJECT_ID || 'atxletsplay' }}
         env:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
