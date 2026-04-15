@@ -55,7 +55,7 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           channelId: live
-          projectId: '${{ secrets.FIREBASE_PROJECT_ID || 'atxletsplay' }}'
+          projectId: "${{ secrets.FIREBASE_PROJECT_ID || 'atxletsplay' }}"
           entryPoint: web
 
   distribute-android:
@@ -100,6 +100,6 @@ jobs:
       - name: Upload APK to Firebase App Distribution
         uses: w9jds/firebase-action@master
         with:
-          args: appdistribution:distribute web/android/app/build/outputs/apk/debug/app-debug.apk --app ${{ secrets.FIREBASE_APP_ID_ANDROID }} --project ${{ secrets.FIREBASE_PROJECT_ID || 'atxletsplay' }}
+          args: appdistribution:distribute web/android/app/build/outputs/apk/debug/app-debug.apk --app ${{ secrets.FIREBASE_APP_ID_ANDROID }} --project "${{ secrets.FIREBASE_PROJECT_ID || 'atxletsplay' }}"
         env:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
