@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SearchBar from '../components/SearchBar';
-import Avatar from '../components/Avatar';
+import RiveAvatar from '../components/RiveAvatar';
 import AustinMap3D from '../components/AustinMap3D';
 import CreateGameModal from '../components/CreateGameModal';
 import './Home.css';
@@ -37,11 +37,12 @@ export default function Home() {
       if (maxScroll <= 0) return;
       const progress = Math.min(1, el.scrollTop / maxScroll);
       setScrollProgress(progress);
-
-      // Lock when fully scrolled
-      if (progress >= 0.98) {
+      
+      // Lock when fully scrolled (after the horizon snap)
+      if (progress >= 0.99) {
         setMapLocked(true);
       }
+
     }
 
     el.addEventListener('scroll', onScroll, { passive: true });
@@ -112,7 +113,7 @@ export default function Home() {
 
         {/* Avatar */}
         <div className="home-avatar">
-          <Avatar url={avatarUrl} name={displayName} size="large" xp={0} />
+          <RiveAvatar size="large" />
         </div>
 
         {/* Settings Cog (large, prominent) */}

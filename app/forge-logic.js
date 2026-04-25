@@ -14,7 +14,12 @@ import { OpenAI } from 'openai';
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// ─── LORE SEEDS ───
+/**
+ * ─── LORE DIRECTORIES ───
+ * Individual character souls and 'Celestial Oracles' live in:
+ * - app/forge/characters/CelestialOracles/
+ * - app/forge/characters/DistrictLegends/
+ */
 const LORE_SEEDS = {
   'downtown': {
     name: 'Downtown (Pease District)',

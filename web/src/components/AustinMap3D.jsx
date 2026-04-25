@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { Html, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import './AustinMap3D.css';
+import CelestialOracleRive from './CelestialOracleRive';
 
 // ─── DISTRICT DATA ───
 // Position each district tile on the isometric grid (x, z) — y is height
@@ -10,6 +11,8 @@ const DISTRICTS = [
   {
     id: 'mueller',
     name: 'Mueller',
+    legendId: 'mueller-maverick',
+    loreSnippet: 'Home of the Neighborhood Strategists.',
     position: [1.5, 0, -1.5],
     color: '#22d366',
     hoverColor: '#34eeff',
@@ -19,6 +22,8 @@ const DISTRICTS = [
   {
     id: 'hyde-park',
     name: 'Hyde Park',
+    legendId: 'shipe-historian',
+    loreSnippet: 'Technical mastery at Shipe Park.',
     position: [-1.5, 0, -1.2],
     color: '#f59e0b',
     hoverColor: '#fcd34d',
@@ -28,6 +33,8 @@ const DISTRICTS = [
   {
     id: 'downtown',
     name: 'Downtown',
+    legendId: 'nelson-the-red',
+    loreSnippet: 'The High-Intensity Urban Kings.',
     position: [0, 0, 0.8],
     color: '#6366f1',
     hoverColor: '#a78bfa',
@@ -37,6 +44,8 @@ const DISTRICTS = [
   {
     id: 'south-congress',
     name: 'SoCo',
+    legendId: 'soco-neon-spiker',
+    loreSnippet: 'Vibrant connections at Little Stacy.',
     position: [-0.5, 0, 2.8],
     color: '#ec4899',
     hoverColor: '#f9a8d4',
@@ -44,6 +53,102 @@ const DISTRICTS = [
     size: [2.4, 0.3, 1.8],
   },
 ];
+
+// ─── CELESTIAL ORACLE DATA ───
+const ORACLES = [
+  {
+    id: 'barbara-jordan',
+    name: 'Saint Barbara',
+    position: [0.2, 3.2, 0.4], // Over Downtown
+    color: '#fbbf24',
+    targetDistrict: 'downtown',
+    intensity: 1.2,
+    size: 0.18,
+  },
+  {
+    id: 'azalea',
+    name: 'Azalea',
+    position: [-1.2, 2.5, -0.8], // Over Hyde Park area
+    color: '#ec4899',
+    targetDistrict: 'hyde-park',
+    intensity: 0.9,
+    size: 0.14,
+  },
+  {
+    id: 'mustangs',
+    name: 'Seven Mustangs',
+    position: [2.0, 4.0, 2.0], // Starting high
+    color: '#92400e',
+    isKinetic: true,
+    intensity: 1.5,
+    size: 0.22,
+  },
+];
+
+// ─── CELSTIAL ORACLE COMPONENT ───
+function CelestialOracle({ oracle, scrollProgress }) {
+  const meshRef = useRef();
+  
+  useFrame(({ clock, mouse }) => {
+    if (!meshRef.current) return;
+    const time = clock.getElapsedTime();
+    
+    // Float logic
+    meshRef.current.position.y = oracle.position[1] + Math.sin(time * 0.8) * 0.2;
+    
+    // Kinetic Guide logic (Mustangs follow mouse or scroll)
+    if (oracle.isKinetic) {
+      const targetX = oracle.position[0] + mouse.x * 2;
+      const targetZ = oracle.position[2] + mouse.y * 2;
+      meshRef.current.position.x += (targetX - meshRef.current.position.x) * 0.05;
+      meshRef.current.position.z += (targetZ - meshRef.current.position.z) * 0.05;
+    } else {
+      // Others subtle drift
+      meshRef.current.position.x = oracle.position[0] + Math.cos(time * 0.5) * 0.1;
+    }
+  });
+
+  return (
+    <group position={oracle.position}>
+      <mesh ref={meshRef}>
+        <Html center occlude={false} transform distanceFactor={5}>
+          <CelestialOracleRive name={oracle.name} />
+        </Html>
+      </mesh>
+      <pointLight color={oracle.color} intensity={oracle.intensity} distance={4} />
+    </group>
+  );
+}
+
+// ─── LIGHT BEAM (STITCH) COMPONENT ───
+function LightBeam({ start, end, color }) {
+  const points = [new THREE.Vector3(...start), new THREE.Vector3(...end)];
+  const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+
+  return (
+    <line geometry={lineGeometry}>
+      <lineBasicMaterial color={color} transparent opacity={0.4} linewidth={2} />
+    </line>
+  );
+}
+
+// ─── HORIZON MURAL COMPONENT ───
+function HorizonMural({ scrollProgress }) {
+  const texture = useTexture('styleistbackgrounud.jpg');
+  const snapThreshold = 0.98;
+  const isSnapped = scrollProgress >= snapThreshold;
+
+  return (
+    <mesh position={[0, 4, -18]} rotation={[0, 0, 0]}>
+      <planeGeometry args={[40, 22]} />
+      <meshBasicMaterial 
+        map={texture} 
+        transparent 
+        opacity={isSnapped ? 1 : 0} 
+      />
+    </mesh>
+  );
+}
 
 // ─── DISTRICT TILE ───
 function DistrictTile({ district, onDistrictClick, activeGames }) {
@@ -134,14 +239,31 @@ function GridLines() {
 // ─── CAMERA ZOOM CONTROLLER ───
 function CameraController({ scrollProgress }) {
   const { camera } = useThree();
+  const snapThreshold = 0.98;
 
   useFrame(() => {
-    // Keep camera always looking at scene center
-    camera.lookAt(0, 0, 0);
-
-    // Zoom in as scroll increases: 60 (overview) → 120 (close-up)
-    const targetZoom = 60 + scrollProgress * 60;
-    camera.zoom += (targetZoom - camera.zoom) * 0.08;
+    const isSnapped = scrollProgress >= snapThreshold;
+    
+    if (isSnapped) {
+      // SUDDEN SNAP: Pivot to Horizon
+      const targetPos = new THREE.Vector3(0, 4, 12);
+      const targetLook = new THREE.Vector3(0, 4, -18);
+      
+      camera.position.lerp(targetPos, 0.1);
+      camera.lookAt(targetLook);
+      
+      camera.zoom += (110 - camera.zoom) * 0.1;
+    } else {
+      // NORMAL: Isometric Zoom
+      camera.lookAt(0, 0, 0);
+      const targetZoom = 60 + scrollProgress * 60;
+      camera.zoom += (targetZoom - camera.zoom) * 0.08;
+      
+      // Keep isometric position
+      const isoPos = new THREE.Vector3(8, 9, 8);
+      camera.position.lerp(isoPos, 0.1);
+    }
+    
     camera.updateProjectionMatrix();
   });
 
@@ -162,19 +284,20 @@ export default function AustinMap3D({ onDistrictClick, activeGames, scrollProgre
         <CameraController scrollProgress={scrollProgress} />
 
         {/* Lighting */}
-        <ambientLight intensity={0.7} />
+        <ambientLight intensity={scrollProgress >= 0.98 ? 0.3 : 0.7} />
         <directionalLight
           position={[5, 12, 5]}
-          intensity={1.4}
+          intensity={scrollProgress >= 0.98 ? 0.2 : 1.4}
           castShadow
           shadow-mapSize={[1024, 1024]}
         />
-        <pointLight position={[-4, 6, -4]} intensity={0.5} color="#6366f1" />
+        <pointLight position={[0, 5, -5]} intensity={scrollProgress >= 0.98 ? 3 : 0.5} color="#a78bfa" />
 
         {/* Scene */}
-        <color attach="background" args={['#060c14']} />
+        <color attach="background" args={[scrollProgress >= 0.98 ? '#0a0510' : '#060c14']} />
         <Ground />
         <GridLines />
+        <HorizonMural scrollProgress={scrollProgress} />
 
         {DISTRICTS.map(district => (
           <DistrictTile
@@ -183,6 +306,20 @@ export default function AustinMap3D({ onDistrictClick, activeGames, scrollProgre
             onDistrictClick={onDistrictClick}
             activeGames={activeGames}
           />
+        ))}
+
+        {/* Celestial Oracles Layer */}
+        {ORACLES.map(oracle => (
+          <group key={oracle.id}>
+            <CelestialOracle oracle={oracle} scrollProgress={scrollProgress} />
+            {oracle.targetDistrict && (
+              <LightBeam 
+                start={oracle.position} 
+                end={DISTRICTS.find(d => d.id === oracle.targetDistrict).position} 
+                color={oracle.color} 
+              />
+            )}
+          </group>
         ))}
       </Canvas>
     </div>
