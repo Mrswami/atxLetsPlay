@@ -1,3 +1,12 @@
+# Secrets
+.env
+.env.local
+serviceAccountKey.json
+
+# Proprietary Sauce
+.antigravity_private/
+LORE_MANIFEST.md
+
 # Logs
 logs
 *.log
