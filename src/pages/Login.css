@@ -1,10 +1,12 @@
 .login-page {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   background: var(--bg-primary);
   padding: 1.5rem;
+  gap: 1.5rem;
 }
 
 .login-card {
@@ -208,4 +210,12 @@
 
 .login-toggle button:hover {
   color: var(--accent-secondary);
+}
+
+.login-footer {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  opacity: 0.7;
 }

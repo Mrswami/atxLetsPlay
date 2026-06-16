@@ -56,6 +56,10 @@ export default function Settings() {
           <span className="setting-label">Version</span>
           <span className="setting-value">0.1.0-alpha</span>
         </div>
+        <div className="setting-item">
+          <span className="setting-label">Copyright</span>
+          <span className="setting-value">© 2026 Swami Software, LLC</span>
+        </div>
       </section>
 
       <button className="logout-btn" onClick={handleLogout}>

@@ -147,6 +147,9 @@ export default function Login() {
           </button>
         </p>
       </div>
+      <footer className="login-footer">
+        <p>© 2026 Swami Software, LLC. All rights reserved.</p>
+      </footer>
     </div>
   );
 }
