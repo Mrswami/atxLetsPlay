@@ -9,9 +9,15 @@ service cloud.firestore {
     
     // Allow reading games (everyone can see, only creator can edit)
     match /games/{gameId} {
-      allow read: if request.auth != null;
+      allow read: if true;
       allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && resource.data.creatorId == request.auth.uid;
+      allow update, delete: if request.auth != null && (resource.data.creatorId == request.auth.uid || resource.data.createdBy == request.auth.uid);
+    }
+
+    // Allow anyone to read courts, but prevent client writes (must be seeded/managed)
+    match /courts/{courtId} {
+      allow read: if true;
+      allow write: if false;
     }
   }
 }
