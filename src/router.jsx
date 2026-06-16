@@ -9,6 +9,7 @@ import CreateGame from './pages/CreateGame';
 import ActiveGames from './pages/ActiveGames';
 import Profile from './pages/Profile';
 import Leaderboard from './pages/Leaderboard';
+import Onboarding from './pages/Onboarding';
 import Loading from './components/Loading';
 
 function ProtectedRoute({ children }) {
@@ -52,6 +53,14 @@ export default function AppRouter() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <Onboarding />
             </ProtectedRoute>
           }
         />

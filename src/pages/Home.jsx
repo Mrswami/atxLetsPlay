@@ -5,6 +5,7 @@ import SearchBar from '../components/SearchBar';
 import Avatar from '../components/Avatar';
 import AustinMap from '../components/AustinMap';
 import { useAllActiveGames } from '../hooks/useCourts';
+import { SPORT_META } from '../data/courtsMeta';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import './Home.css';
@@ -22,7 +23,122 @@ export default function Home() {
   const xp = userProfile?.xp || 0;
   const avatarUrl = userProfile?.avatarUrl || user?.photoURL || '';
 
-  const { activeGames } = useAllActiveGames();
+  const { activeGames, gamesList } = useAllActiveGames();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  const touchStartY = useRef(0);
+  const touchStartX = useRef(0);
+
+  const scrollToMap = useCallback(() => {
+    const el = containerRef.current;
+    if (el) {
+      const maxScroll = el.scrollHeight - el.clientHeight;
+      el.scrollTo({ top: maxScroll, behavior: 'smooth' });
+    }
+  }, []);
+
+  const handleTouchStart = useCallback((e) => {
+    touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e) => {
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 40) {
+      if (!mapLocked) {
+        scrollToMap();
+      } else if (mapLocked && deltaY > 40) {
+        handleBack();
+      }
+    }
+  }, [mapLocked, scrollToMap, handleBack]);
+
+  const getPersonalizedHint = useCallback((court) => {
+    const userDistrict = userProfile?.district || '';
+    const userSports = userProfile?.sport_preferences || [];
+    const userPlayStyle = userProfile?.playStyle || 'chill';
+
+    const inDistrict = court.district === userDistrict;
+    const matchesSport = (court.sport || []).some((s) => userSports.includes(s));
+
+    let styleLabel = '';
+    if (userPlayStyle === 'chill') {
+      styleLabel = '😌 Chill vibes match';
+    } else if (userPlayStyle === 'competitive') {
+      styleLabel = '🏆 Competitive pickup';
+    } else if (userPlayStyle === 'athletic') {
+      styleLabel = '🏃‍♂️ Athletic challenge';
+    } else if (userPlayStyle === 'curious') {
+      styleLabel = '🤔 Try something new';
+    }
+
+    if (inDistrict && matchesSport) {
+      return `🔥 Best Match · ${styleLabel}`;
+    } else if (matchesSport) {
+      return `✨ Matches your sports · ${styleLabel}`;
+    } else if (inDistrict) {
+      return `🏠 In your district · ${styleLabel}`;
+    }
+    return styleLabel;
+  }, [userProfile]);
+
+  // Group games count per courtId for recommendation overlays
+  const gamesCountPerCourt = {};
+  if (gamesList) {
+    gamesList.forEach((game) => {
+      if (game.status === 'open') {
+        gamesCountPerCourt[game.courtId] = (gamesCountPerCourt[game.courtId] || 0) + 1;
+      }
+    });
+  }
+
+  // Recommendation sorting scoring algorithm
+  const getRecommendedCourts = () => {
+    const userDistrict = userProfile?.district || '';
+    const userSports = userProfile?.sport_preferences || [];
+
+    let list = courts;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = courts.filter((c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.address.toLowerCase().includes(q) ||
+        c.district.toLowerCase().includes(q) ||
+        (c.sport || []).some((s) => s.toLowerCase().includes(q))
+      );
+    }
+
+    return [...list]
+      .sort((a, b) => {
+        const aInDistrict = a.district === userDistrict;
+        const bInDistrict = b.district === userDistrict;
+        const aMatchesSport = (a.sport || []).some((s) => userSports.includes(s));
+        const bMatchesSport = (b.sport || []).some((s) => userSports.includes(s));
+
+        let aScore = 0;
+        let bScore = 0;
+
+        if (aInDistrict && aMatchesSport) aScore += 10;
+        else if (aMatchesSport) aScore += 5;
+        else if (aInDistrict) aScore += 2;
+
+        if (bInDistrict && bMatchesSport) bScore += 10;
+        else if (bMatchesSport) bScore += 5;
+        else if (bInDistrict) bScore += 2;
+
+        // Boost courts with active matches
+        aScore += (gamesCountPerCourt[a.id] || 0) * 3;
+        bScore += (gamesCountPerCourt[b.id] || 0) * 3;
+
+        return bScore - aScore;
+      })
+      .slice(0, 5); // Return top 5 recommendations
+  };
+
+  const recommendations = getRecommendedCourts();
 
   // Fetch all courts for quick selector
   useEffect(() => {
@@ -32,6 +148,13 @@ export default function Home() {
       })
       .catch(console.error);
   }, []);
+
+  // Redirect to onboarding if profile is not completed
+  useEffect(() => {
+    if (userProfile && !userProfile.hasCompletedOnboarding) {
+      navigate('/onboarding');
+    }
+  }, [userProfile, navigate]);
 
   // Scroll-driven zoom: track scroll progress 0→1
   useEffect(() => {
@@ -89,7 +212,20 @@ export default function Home() {
   const mapTranslateY = (1 - scrollProgress) * 10; // slides up as you scroll
 
   return (
-    <div className="home-page" ref={containerRef}>
+    <div
+      className={`home-page ${searchFocused ? 'search-active' : ''}`}
+      ref={containerRef}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Sleek Glassmorphic Search Overlay Backdrop */}
+      {searchFocused && (
+        <div
+          className="search-overlay-backdrop"
+          onClick={() => setSearchFocused(false)}
+        />
+      )}
+
       {/* ── Dashboard Layer (fades out on scroll) ── */}
       <div
         className="dashboard-layer"
@@ -112,7 +248,65 @@ export default function Home() {
 
         {/* Search */}
         <div className="home-search">
-          <SearchBar onSearch={handleSearch} />
+          <SearchBar
+            query={searchQuery}
+            setQuery={setSearchQuery}
+            focused={searchFocused}
+            setFocused={setSearchFocused}
+            onSearch={handleSearch}
+          />
+
+          {/* Search Dropdown Recommendations Overlay */}
+          {searchFocused && (
+            <div className="search-recommendations-dropdown">
+              <div className="srd-header">
+                <span>💡 Recommended Courts</span>
+              </div>
+              <div className="srd-list">
+                {recommendations.length === 0 ? (
+                  <div className="srd-empty">No courts found.</div>
+                ) : (
+                  recommendations.map((court) => {
+                    const activeCount = gamesCountPerCourt[court.id] || 0;
+                    const primarySport = court.sport?.[0];
+                    const sm = SPORT_META[primarySport];
+                    const inDistrict = court.district === userProfile?.district;
+
+                    return (
+                      <button
+                        key={court.id}
+                        className="srd-item"
+                        onClick={() => navigate(`/court/${court.id}`)}
+                        id={`recommendation-${court.id}`}
+                      >
+                        <span className="srd-item-emoji">{sm?.emoji || '🏟️'}</span>
+                        <div className="srd-item-info">
+                          <span className="srd-item-name">
+                            {court.name}
+                            {inDistrict && <span className="srd-badge-district">Home</span>}
+                          </span>
+                          <span className="srd-item-meta">
+                            {court.district?.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                            {court.sport?.map((s) => ` · ${SPORT_META[s]?.label || s}`)}
+                          </span>
+                          <span className="srd-item-personal">
+                            {getPersonalizedHint(court)}
+                          </span>
+                        </div>
+                        <div className="srd-item-action">
+                          {activeCount > 0 ? (
+                            <span className="srd-game-badge pulsing">{activeCount} Game{activeCount !== 1 ? 's' : ''}</span>
+                          ) : (
+                            <span className="srd-arrow">→</span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Avatar */}
@@ -183,6 +377,19 @@ export default function Home() {
             I GOT NEXT
           </button>
         </div>
+      </div>
+
+      {/* ── Swipe Down Hint (fades out on scroll) ── */}
+      <div
+        className="map-swipe-hint"
+        onClick={scrollToMap}
+        style={{
+          opacity: dashOpacity,
+          pointerEvents: dashOpacity < 0.1 ? 'none' : 'auto',
+        }}
+      >
+        <span className="swipe-chevron">▼</span>
+        <span className="swipe-text">Swipe down to explore map</span>
       </div>
 
       {/* ── Map Layer (always visible, scales up on scroll) ── */}

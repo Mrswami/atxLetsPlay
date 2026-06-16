@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import './SearchBar.css';
 
-export default function SearchBar({ onSearch }) {
-  const [query, setQuery] = useState('');
-  const [focused, setFocused] = useState(false);
-
+export default function SearchBar({ query, setQuery, focused, setFocused, onSearch }) {
   function handleSubmit(e) {
     e.preventDefault();
     if (onSearch && query.trim()) onSearch(query.trim());
@@ -19,11 +16,11 @@ export default function SearchBar({ onSearch }) {
       <input
         id="search-input"
         type="text"
-        placeholder="Search Friend or Court"
+        placeholder="🔍 Find a Court..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onBlur={() => setTimeout(() => setFocused(false), 200)}
         autoComplete="off"
       />
       {query && (

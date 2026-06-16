@@ -11,7 +11,7 @@ import {
   isSignInWithEmailLink,
   signInWithEmailLink,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 
 const AuthContext = createContext(null);
@@ -61,34 +61,47 @@ export function AuthProvider({ children }) {
       console.error('Magic link sign-in error:', err);
     });
 
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubProfile = null;
+
+    const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
         const profileRef = doc(db, 'users', firebaseUser.uid);
-        const profileSnap = await getDoc(profileRef);
-        if (profileSnap.exists()) {
-          setUserProfile(profileSnap.data());
-        } else {
-          // If profile missing (e.g. first magic link login or Google), create it
-          const profileData = {
-            uid: firebaseUser.uid,
-            displayName: firebaseUser.displayName || 'Player',
-            email: firebaseUser.email || '',
-            avatarUrl: firebaseUser.photoURL || '',
-            district: '',
-            xp: 0,
-            gamesPlayed: 0,
-            createdAt: serverTimestamp(),
-          };
-          await setDoc(profileRef, profileData);
-          setUserProfile(profileData);
-        }
+        
+        unsubProfile = onSnapshot(profileRef, async (snap) => {
+          if (snap.exists()) {
+            setUserProfile(snap.data());
+            setLoading(false);
+          } else {
+            const profileData = {
+              uid: firebaseUser.uid,
+              displayName: firebaseUser.displayName || 'Player',
+              email: firebaseUser.email || '',
+              avatarUrl: firebaseUser.photoURL || '',
+              district: '',
+              xp: 0,
+              gamesPlayed: 0,
+              createdAt: serverTimestamp(),
+            };
+            await setDoc(profileRef, profileData);
+          }
+        });
       } else {
         setUserProfile(null);
+        if (unsubProfile) {
+          unsubProfile();
+          unsubProfile = null;
+        }
+        setLoading(false);
       }
-      setLoading(false);
     });
-    return unsub;
+
+    return () => {
+      unsubAuth();
+      if (unsubProfile) {
+        unsubProfile();
+      }
+    };
   }, []);
 
   async function signup(email, password, displayName) {

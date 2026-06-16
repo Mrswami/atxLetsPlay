@@ -116,6 +116,15 @@ export default function AustinMap({ onDistrictClick, activeGames = {} }) {
                   cx={district.labelPos.x + 30}
                   cy={district.labelPos.y - 14}
                   r="11"
+                  fill="none"
+                  stroke="var(--accent-secondary)"
+                  strokeWidth="2"
+                  className="game-count-pulse-ring"
+                />
+                <circle
+                  cx={district.labelPos.x + 30}
+                  cy={district.labelPos.y - 14}
+                  r="11"
                   fill="var(--accent-secondary)"
                   className="game-count-circle"
                 />
