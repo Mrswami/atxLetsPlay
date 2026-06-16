@@ -1,0 +1,250 @@
+.leaderboard-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.5rem 2.5rem 1.5rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Header */
+.lb-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.lb-back-btn {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.lb-back-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.lb-back-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.lb-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+/* Filter Selector */
+.lb-filter-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.lb-filter-container label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-left: 0.1rem;
+}
+
+.lb-filter-container select {
+  background: var(--surface-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.lb-filter-container select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.15);
+}
+
+/* Rankings Container */
+.lb-container {
+  flex: 1;
+}
+
+.lb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.lb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+  text-align: center;
+  background: var(--surface-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  gap: 0.5rem;
+}
+
+.lb-empty span {
+  font-size: 2.2rem;
+}
+
+/* Leaderboard Item */
+.lb-item {
+  display: flex;
+  align-items: center;
+  background: var(--surface-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 0.85rem 1rem;
+  gap: 0.9rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s;
+}
+
+.lb-item:hover {
+  transform: translateY(-1px);
+}
+
+/* Rank / Medals */
+.lb-rank-wrapper {
+  width: 28px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.lb-medal {
+  font-size: 1.45rem;
+}
+
+.lb-rank {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* Avatar fallback */
+.lb-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+/* Info details */
+.lb-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.15rem;
+}
+
+.lb-name {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lb-district {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+
+/* XP block */
+.lb-xp {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.05rem;
+}
+
+.lb-xp-num {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.lb-xp-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  letter-spacing: 0.05em;
+}
+
+/* Specialized Highlighting */
+.lb-item.current-user {
+  border-color: rgba(var(--accent-primary-rgb), 0.35);
+  box-shadow: 0 4px 16px rgba(var(--accent-primary-rgb), 0.08);
+}
+
+.lb-item.current-user .lb-name {
+  color: var(--accent-primary);
+}
+
+.lb-item.current-user .lb-avatar {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-dark));
+  border-color: transparent;
+  color: #fff;
+}
+
+/* Top 3 Medals Glow styling */
+.lb-item.top-1 {
+  border-color: rgba(234, 179, 8, 0.25);
+  box-shadow: 0 4px 16px rgba(234, 179, 8, 0.04);
+}
+
+.lb-item.top-2 {
+  border-color: rgba(148, 163, 184, 0.25);
+  box-shadow: 0 4px 16px rgba(148, 163, 184, 0.04);
+}
+
+.lb-item.top-3 {
+  border-color: rgba(249, 115, 22, 0.2);
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.04);
+}
+
+/* Footer branding */
+.lb-footer-llc {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}

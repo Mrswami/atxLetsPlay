@@ -90,10 +90,38 @@
   padding: 0.15rem 0;
 }
 
-/* ─── Settings Cog (LARGE, prominent) ─── */
-.settings-cog {
-  width: 64px;
-  height: 64px;
+/* ─── Avatar button wrapper ─── */
+.home-avatar-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.25s ease;
+  border-radius: 50%;
+}
+
+.home-avatar-btn:hover {
+  transform: scale(1.08);
+}
+
+.home-avatar-btn:active {
+  transform: scale(0.95);
+}
+
+/* ─── Utility row ─── */
+.home-utility-row {
+  display: flex;
+  gap: 0.85rem;
+  justify-content: center;
+  align-items: center;
+  margin: 0.15rem 0;
+}
+
+/* ─── Utility buttons (LARGE, prominent) ─── */
+.settings-cog,
+.leaderboard-btn {
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: linear-gradient(145deg, #1a2744, #0d1520);
   border: 2px solid var(--glass-border);
@@ -106,16 +134,17 @@
   box-shadow:
     0 6px 24px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  margin: 0.25rem 0;
 }
 
-.settings-cog svg {
-  width: 34px;
-  height: 34px;
+.settings-cog svg,
+.leaderboard-btn svg {
+  width: 30px;
+  height: 30px;
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.settings-cog:hover {
+.settings-cog:hover,
+.leaderboard-btn:hover {
   color: var(--accent-primary);
   border-color: rgba(var(--accent-primary-rgb), 0.4);
   box-shadow:
@@ -128,7 +157,12 @@
   transform: rotate(45deg);
 }
 
-.settings-cog:active {
+.leaderboard-btn:hover svg {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.settings-cog:active,
+.leaderboard-btn:active {
   transform: scale(0.95);
 }
 

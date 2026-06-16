@@ -7,6 +7,8 @@ import DistrictCourts from './pages/DistrictCourts';
 import CourtDetail from './pages/CourtDetail';
 import CreateGame from './pages/CreateGame';
 import ActiveGames from './pages/ActiveGames';
+import Profile from './pages/Profile';
+import Leaderboard from './pages/Leaderboard';
 import Loading from './components/Loading';
 
 function ProtectedRoute({ children }) {
@@ -45,8 +47,18 @@ export default function AppRouter() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/profile/:uid"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
         {/* Active games browser — public */}
         <Route path="/active-games" element={<ActiveGames />} />
+        {/* Leaderboard — public */}
+        <Route path="/leaderboard" element={<Leaderboard />} />
         {/* District drill-down — public */}
         <Route path="/district/:districtId" element={<DistrictCourts />} />
         {/* Court detail — public */}
