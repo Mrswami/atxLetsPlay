@@ -62,13 +62,19 @@
   z-index: 1;
 }
 
-.avatar-silhouette {
-  width: 70%;
-  height: 70%;
-  color: var(--text-tertiary);
-  opacity: 0.6;
-  transform: translateY(8%);
+.avatar-initials {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  line-height: 1;
+  /* Scale font to avatar size */
+  font-size: 35%;
 }
+
+.avatar--large .avatar-initials { font-size: 2.4rem; }
+.avatar--medium .avatar-initials { font-size: 1.4rem; }
+.avatar--small .avatar-initials { font-size: 0.85rem; }
 
 .avatar-xp-badge {
   position: absolute;

@@ -1,0 +1,279 @@
+/* ═══════════════════════════════════════════════════
+   DISTRICT COURTS — Court list for a tapped district
+   ═══════════════════════════════════════════════════ */
+
+.district-courts-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 0 4rem;
+}
+
+/* ─── Header ─── */
+.dc-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  position: sticky;
+  top: 0;
+  background: var(--bg-primary);
+  z-index: 10;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.dc-back-btn {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 0.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dc-back-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dc-back-btn:hover {
+  color: var(--accent-primary);
+  border-color: rgba(var(--accent-primary-rgb), 0.4);
+}
+
+.dc-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+}
+
+.dc-district-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dc-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.dc-count {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+/* ─── Sport Filter Tabs ─── */
+.dc-sport-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dc-sport-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.sport-tab {
+  flex-shrink: 0;
+  background: var(--surface-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 0.4rem 0.9rem;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+}
+
+.sport-tab:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+.sport-tab.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #000;
+  font-weight: 800;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(var(--accent-primary-rgb), 0.3);
+}
+
+/* ─── Court Cards List ─── */
+.dc-courts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem 1.5rem;
+}
+
+/* ─── Empty State ─── */
+.dc-empty {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--text-tertiary);
+}
+
+.dc-empty span {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.dc-empty p {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.dc-empty-sub {
+  font-size: 0.8rem !important;
+  color: var(--text-tertiary) !important;
+}
+
+/* ─── Court Card ─── */
+.court-card {
+  width: 100%;
+  background: var(--surface-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.court-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.court-card:active {
+  transform: scale(0.98);
+}
+
+/* Thumbnail */
+.court-card-thumb {
+  width: 100%;
+  height: 130px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.court-card-emoji {
+  font-size: 3.5rem;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+}
+
+.court-card-3d-badge {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  background: linear-gradient(135deg, var(--accent-tertiary), #6d28d9);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(109, 40, 217, 0.4);
+}
+
+/* Info section */
+.court-card-info {
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.court-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.court-card-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.court-card-chevron {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.court-card-chevron svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Sport tags */
+.court-card-sports {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.sport-tag {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--tag-color, var(--accent-primary));
+  background: color-mix(in srgb, var(--tag-color, var(--accent-primary)) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--accent-primary)) 30%, transparent);
+  border-radius: 8px;
+  padding: 0.18rem 0.5rem;
+}
+
+/* Meta chips */
+.court-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.court-meta-chip {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  background: var(--surface-elevated);
+  border-radius: 6px;
+  padding: 0.15rem 0.45rem;
+}

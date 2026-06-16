@@ -71,7 +71,7 @@ export default function Home() {
   }
 
   function handleDistrictClick(district) {
-    console.log('District clicked:', district.name);
+    navigate(`/district/${district.id}`);
   }
 
   // Derived values from scroll progress

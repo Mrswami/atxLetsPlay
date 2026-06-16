@@ -3,6 +3,8 @@ import { useAuth } from './contexts/AuthContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
+import DistrictCourts from './pages/DistrictCourts';
+import CourtDetail from './pages/CourtDetail';
 import Loading from './components/Loading';
 
 function ProtectedRoute({ children }) {
@@ -33,6 +35,10 @@ export default function AppRouter() {
             </ProtectedRoute>
           }
         />
+        {/* District drill-down — public (no auth required) */}
+        <Route path="/district/:districtId" element={<DistrictCourts />} />
+        {/* Court detail — public */}
+        <Route path="/court/:courtId" element={<CourtDetail />} />
       </Routes>
     </BrowserRouter>
   );
