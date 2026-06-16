@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Settings from './pages/Settings';
 import DistrictCourts from './pages/DistrictCourts';
 import CourtDetail from './pages/CourtDetail';
+import CreateGame from './pages/CreateGame';
+import ActiveGames from './pages/ActiveGames';
 import Loading from './components/Loading';
 
 function ProtectedRoute({ children }) {
@@ -35,7 +37,17 @@ export default function AppRouter() {
             </ProtectedRoute>
           }
         />
-        {/* District drill-down — public (no auth required) */}
+        <Route
+          path="/create-game/:courtId"
+          element={
+            <ProtectedRoute>
+              <CreateGame />
+            </ProtectedRoute>
+          }
+        />
+        {/* Active games browser — public */}
+        <Route path="/active-games" element={<ActiveGames />} />
+        {/* District drill-down — public */}
         <Route path="/district/:districtId" element={<DistrictCourts />} />
         {/* Court detail — public */}
         <Route path="/court/:courtId" element={<CourtDetail />} />

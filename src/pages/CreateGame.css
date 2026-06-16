@@ -1,0 +1,229 @@
+.create-game-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.5rem 2.5rem 1.5rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.create-game-error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: center;
+  padding: 2rem;
+}
+
+.create-game-error span {
+  font-size: 3rem;
+}
+
+.create-game-error h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.create-game-error button {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Header */
+.cg-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.cg-back-btn {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.cg-back-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.cg-back-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cg-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+}
+
+/* Container */
+.cg-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  flex: 1;
+}
+
+/* Court Card */
+.cg-court-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(145deg, #162032, #0e1624);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 1.1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.cg-court-emoji {
+  font-size: 1.8rem;
+}
+
+.cg-court-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.cg-court-info h2 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cg-court-info p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Form */
+.cg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  background: var(--surface-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 1.4rem;
+}
+
+.cg-form-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-left: 0.1rem;
+}
+
+.form-group select,
+.form-group input,
+.form-group textarea {
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 0.75rem 0.95rem;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-group select:focus,
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.15);
+}
+
+.form-group textarea {
+  resize: none;
+}
+
+/* LLC copyright footer inside form */
+.cg-llc-footer {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Submit Button */
+.cg-submit-btn {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-dark));
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.95rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 18px rgba(var(--accent-primary-rgb), 0.35);
+  margin-top: 0.5rem;
+}
+
+.cg-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(var(--accent-primary-rgb), 0.5);
+}
+
+.cg-submit-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.cg-submit-btn:disabled {
+  background: var(--text-tertiary);
+  color: var(--text-secondary);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}

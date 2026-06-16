@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useCourt, useCourtGames } from '../hooks/useCourts';
+import { useCourt, useCourtGames, joinGame, leaveGame } from '../hooks/useCourts';
 import { useAuth } from '../contexts/AuthContext';
 import { SPORT_META } from '../data/courtsMeta';
 import Loading from '../components/Loading';
@@ -13,6 +13,25 @@ export default function CourtDetail() {
   const { court, loading, error } = useCourt(courtId);
   const { games, loading: gamesLoading } = useCourtGames(courtId);
   const [viewMode, setViewMode] = useState('info'); // 'info' | '3d' | 'games'
+  const [actionError, setActionError] = useState('');
+
+  async function handleGameAction(game) {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    const isJoined = game.currentPlayers?.includes(user.uid);
+    try {
+      setActionError('');
+      if (isJoined) {
+        await leaveGame(game.id, user.uid);
+      } else {
+        await joinGame(game.id, user.uid);
+      }
+    } catch (err) {
+      setActionError(err.message || 'Action failed. Please try again.');
+    }
+  }
 
   if (loading) return <Loading />;
   if (error || !court) {
@@ -218,15 +237,56 @@ export default function CourtDetail() {
               </div>
             ) : (
               <div className="cd-games-list">
+                {actionError && <div className="cd-action-error">{actionError}</div>}
                 <h3 className="cd-section-title">Active Games</h3>
                 {games.map((game) => (
-                  <GameCard key={game.id} game={game} onJoin={() => user ? null : navigate('/login')} />
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    userId={user?.uid}
+                    onAction={() => handleGameAction(game)}
+                  />
                 ))}
               </div>
             )}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function GameCard({ game, userId, onAction }) {
+  const meta = SPORT_META[game.sport];
+  const scheduledDate = game.scheduledTime?.toDate?.();
+  const timeStr = scheduledDate
+    ? scheduledDate.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+    : 'Time TBD';
+
+  const spotsLeft = (game.maxPlayers || 10) - (game.currentPlayers?.length || 0);
+  const isJoined = game.currentPlayers?.includes(userId);
+
+  return (
+    <div className={`game-card ${isJoined ? 'joined' : ''}`}>
+      <div className="game-card-header">
+        <span className="game-sport-emoji">{meta?.emoji}</span>
+        <div className="game-card-info">
+          <span className="game-time">{timeStr}</span>
+          <span className="game-skill">{game.skillLevel || 'All levels'}</span>
+        </div>
+        <span className={`game-spots ${spotsLeft <= 2 && spotsLeft > 0 ? 'few' : ''} ${spotsLeft === 0 ? 'full' : ''}`}>
+          {spotsLeft === 0 ? 'FULL' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
+        </span>
+      </div>
+      {game.notes && <p className="game-notes">{game.notes}</p>}
+      <button
+        className={`game-join-btn ${isJoined ? 'leave' : ''}`}
+        disabled={spotsLeft === 0 && !isJoined}
+        onClick={onAction}
+        id={`join-game-${game.id}`}
+      >
+        {isJoined ? 'LEAVE GAME' : spotsLeft === 0 ? 'FULL' : 'I GOT NEXT'}
+      </button>
     </div>
   );
 }
@@ -239,35 +299,6 @@ function InfoItem({ icon, label, value }) {
         <span className="info-label">{label}</span>
         <span className="info-value">{value}</span>
       </div>
-    </div>
-  );
-}
-
-function GameCard({ game, onJoin }) {
-  const meta = SPORT_META[game.sport];
-  const scheduledDate = game.scheduledTime?.toDate?.();
-  const timeStr = scheduledDate
-    ? scheduledDate.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
-    : 'Time TBD';
-
-  const spotsLeft = (game.maxPlayers || 10) - (game.currentPlayers?.length || 0);
-
-  return (
-    <div className="game-card">
-      <div className="game-card-header">
-        <span className="game-sport-emoji">{meta?.emoji}</span>
-        <div className="game-card-info">
-          <span className="game-time">{timeStr}</span>
-          <span className="game-skill">{game.skillLevel || 'All levels'}</span>
-        </div>
-        <span className={`game-spots ${spotsLeft <= 2 ? 'few' : ''}`}>
-          {spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left
-        </span>
-      </div>
-      {game.notes && <p className="game-notes">{game.notes}</p>}
-      <button className="game-join-btn" onClick={onJoin} id={`join-game-${game.id}`}>
-        I GOT NEXT
-      </button>
     </div>
   );
 }

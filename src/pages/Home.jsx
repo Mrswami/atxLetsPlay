@@ -4,6 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 import SearchBar from '../components/SearchBar';
 import Avatar from '../components/Avatar';
 import AustinMap from '../components/AustinMap';
+import { useAllActiveGames } from '../hooks/useCourts';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import './Home.css';
 
 export default function Home() {
@@ -12,17 +15,23 @@ export default function Home() {
   const containerRef = useRef(null);
   const [scrollProgress, setScrollProgress] = useState(0); // 0 = dashboard, 1 = full map
   const [mapLocked, setMapLocked] = useState(false);
+  const [courts, setCourts] = useState([]);
+  const [showCourtSelect, setShowCourtSelect] = useState(false);
 
   const displayName = userProfile?.displayName || user?.displayName || 'Player';
   const xp = userProfile?.xp || 0;
   const avatarUrl = userProfile?.avatarUrl || user?.photoURL || '';
 
-  const activeGames = {
-    mueller: 3,
-    downtown: 1,
-    'hyde-park': 2,
-    'south-congress': 1,
-  };
+  const { activeGames } = useAllActiveGames();
+
+  // Fetch all courts for quick selector
+  useEffect(() => {
+    getDocs(collection(db, 'courts'))
+      .then((snap) => {
+        setCourts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      })
+      .catch(console.error);
+  }, []);
 
   // Scroll-driven zoom: track scroll progress 0→1
   useEffect(() => {
@@ -126,7 +135,11 @@ export default function Home() {
 
         {/* Quick Actions */}
         <div className="home-actions">
-          <button className="action-btn action-btn--create" id="create-game-button">
+          <button
+            className="action-btn action-btn--create"
+            id="create-game-button"
+            onClick={() => user ? setShowCourtSelect(true) : navigate('/login')}
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="16" />
@@ -134,7 +147,11 @@ export default function Home() {
             </svg>
             CALL NEXT
           </button>
-          <button className="action-btn action-btn--join" id="join-game-button">
+          <button
+            className="action-btn action-btn--join"
+            id="join-game-button"
+            onClick={() => navigate('/active-games')}
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
               <polyline points="10 17 15 12 10 7" />
@@ -169,8 +186,49 @@ export default function Home() {
         THE COURT
       </button>
 
+      {/* Court Selection Drawer */}
+      {showCourtSelect && (
+        <div className="court-select-overlay" onClick={() => setShowCourtSelect(false)}>
+          <div className="court-select-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="cs-header">
+              <h2>Select a Court</h2>
+              <button className="cs-close" onClick={() => setShowCourtSelect(false)}>×</button>
+            </div>
+            <div className="cs-body">
+              {courts.length === 0 ? (
+                <p className="cs-loading">Loading courts...</p>
+              ) : (
+                <div className="cs-list">
+                  {courts.map((court) => (
+                    <button
+                      key={court.id}
+                      className="cs-item"
+                      onClick={() => {
+                        setShowCourtSelect(false);
+                        navigate(`/create-game/${court.id}`);
+                      }}
+                      id={`select-court-${court.id}`}
+                    >
+                      <span className="cs-item-emoji">🏟️</span>
+                      <div className="cs-item-info">
+                        <span className="cs-item-name">{court.name}</span>
+                        <span className="cs-item-district">
+                          {court.district?.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </span>
+                      </div>
+                      <span className="cs-item-arrow">→</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Scroll spacer — creates the scroll distance for the zoom effect */}
       {!mapLocked && <div className="scroll-spacer" />}
     </div>
   );
 }
+
