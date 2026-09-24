@@ -82,7 +82,7 @@ export default function CreateGame() {
       };
 
       await addDoc(collection(db, 'games'), gameData);
-      navigate(`/court/${courtId}`);
+      navigate(`/court/${courtId}`, { state: { fromCreate: true } });
     } catch (err) {
       setError(err.message || 'Failed to create game. Please try again.');
     } finally {

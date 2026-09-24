@@ -104,9 +104,6 @@ function CourtCard({ court, onClick }) {
         {!court.thumbnailUrl && (
           <span className="court-card-emoji">{meta?.emoji || '🏟️'}</span>
         )}
-        {court.modelUrl && (
-          <span className="court-card-3d-badge">3D</span>
-        )}
       </div>
 
       {/* Info */}

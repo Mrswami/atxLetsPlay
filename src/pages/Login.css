@@ -66,6 +66,68 @@
   text-align: center;
 }
 
+.guest-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: linear-gradient(135deg, rgba(34, 211, 102, 0.12), rgba(249, 115, 22, 0.12));
+  border: 1px solid rgba(34, 211, 102, 0.35);
+  border-radius: 16px;
+  padding: 0.85rem 1.1rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+
+.guest-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(34, 211, 102, 0.22), rgba(249, 115, 22, 0.22));
+  border-color: #22d366;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(34, 211, 102, 0.2);
+}
+
+.guest-btn-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.guest-btn-icon {
+  font-size: 1.3rem;
+}
+
+.guest-btn-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.guest-btn-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.guest-btn-sub {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.guest-badge {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #22d366;
+  background: rgba(34, 211, 102, 0.15);
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;

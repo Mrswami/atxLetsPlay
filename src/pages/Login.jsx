@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './Login.css';
 
@@ -12,8 +12,17 @@ export default function Login() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, signup, loginWithGoogle, sendMagicLink } = useAuth();
+  const { login, signup, loginWithGoogle, sendMagicLink, continueAsGuest } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
+  const redirectTo = searchParams.get('redirectTo') || location.state?.redirectTo || '/';
+
+  async function handleGuest() {
+    await continueAsGuest();
+    navigate(redirectTo);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -26,10 +35,10 @@ export default function Login() {
         setMessage('Check your email for the magic link!');
       } else if (isSignup) {
         await signup(email, password, displayName);
-        navigate('/');
+        navigate(redirectTo);
       } else {
         await login(email, password);
-        navigate('/');
+        navigate(redirectTo);
       }
     } catch (err) {
       setError(err.message?.replace('Firebase: ', '') || 'Something went wrong');
@@ -43,7 +52,7 @@ export default function Login() {
     setLoading(true);
     try {
       await loginWithGoogle();
-      navigate('/');
+      navigate(redirectTo);
     } catch (err) {
       setError(err.message?.replace('Firebase: ', '') || 'Google sign-in failed');
     }
@@ -68,6 +77,27 @@ export default function Login() {
         {/* Error / Success Messages */}
         {error && <div className="login-error">{error}</div>}
         {message && <div className="login-message">{message}</div>}
+
+        {/* ⚡ Continue as Guest / Back to Globe */}
+        <button
+          type="button"
+          className="guest-btn"
+          onClick={handleGuest}
+          id="guest-continue-btn"
+        >
+          <div className="guest-btn-content">
+            <span className="guest-btn-icon">🌍</span>
+            <div className="guest-btn-text">
+              <span className="guest-btn-title">Explore 3D Globe Without Sign-In</span>
+              <span className="guest-btn-sub">Spin the world · Tap courts · Zero commitment</span>
+            </div>
+          </div>
+          <span className="guest-badge">→</span>
+        </button>
+
+        <div className="login-divider">
+          <span>or create an account below</span>
+        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="login-form">

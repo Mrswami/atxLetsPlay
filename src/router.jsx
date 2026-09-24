@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -13,9 +13,13 @@ import Onboarding from './pages/Onboarding';
 import Loading from './components/Loading';
 
 function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isGuest } = useAuth();
+  const location = useLocation();
   if (loading) return <Loading />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user && !isGuest) {
+    const dest = location.pathname + location.search;
+    return <Navigate to={`/login?redirectTo=${encodeURIComponent(dest)}`} replace state={{ redirectTo: dest }} />;
+  }
   return children;
 }
 
@@ -24,14 +28,9 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
+        {/* Home & World are open to everyone — no sign-in wall */}
+        <Route path="/" element={<Home />} />
+        <Route path="/world" element={<Home />} />
         <Route
           path="/settings"
           element={
@@ -40,6 +39,7 @@ export default function AppRouter() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/create-game/:courtId"
           element={

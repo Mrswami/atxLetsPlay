@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { AUSTIN_COURTS_DATA } from '../data/courtsMeta';
 
 // ─── Fetch all courts for a specific district ─────────────────────────────────
 export function useDistrictCourts(districtId) {
@@ -10,7 +11,6 @@ export function useDistrictCourts(districtId) {
 
   useEffect(() => {
     if (!districtId) return;
-    setLoading(true);
     const q = query(
       collection(db, 'courts'),
       where('district', '==', districtId),
@@ -18,11 +18,21 @@ export function useDistrictCourts(districtId) {
     );
     getDocs(q)
       .then((snap) => {
-        setCourts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        if (!snap.empty) {
+          setCourts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        } else {
+          const fallback = AUSTIN_COURTS_DATA.filter((c) => c.district === districtId);
+          setCourts(fallback);
+        }
         setLoading(false);
       })
       .catch((err) => {
-        setError(err.message);
+        const fallback = AUSTIN_COURTS_DATA.filter((c) => c.district === districtId);
+        if (fallback.length > 0) {
+          setCourts(fallback);
+        } else {
+          setError(err.message);
+        }
         setLoading(false);
       });
   }, [districtId]);
@@ -38,18 +48,27 @@ export function useCourt(courtId) {
 
   useEffect(() => {
     if (!courtId) return;
-    setLoading(true);
     getDoc(doc(db, 'courts', courtId))
       .then((snap) => {
         if (snap.exists()) {
           setCourt({ id: snap.id, ...snap.data() });
         } else {
-          setError('Court not found');
+          const fallback = AUSTIN_COURTS_DATA.find((c) => c.id === courtId);
+          if (fallback) {
+            setCourt(fallback);
+          } else {
+            setError('Court not found');
+          }
         }
         setLoading(false);
       })
       .catch((err) => {
-        setError(err.message);
+        const fallback = AUSTIN_COURTS_DATA.find((c) => c.id === courtId);
+        if (fallback) {
+          setCourt(fallback);
+        } else {
+          setError(err.message);
+        }
         setLoading(false);
       });
   }, [courtId]);
@@ -64,7 +83,6 @@ export function useCourtGames(courtId) {
 
   useEffect(() => {
     if (!courtId) return;
-    setLoading(true);
     const q = query(
       collection(db, 'games'),
       where('courtId', '==', courtId),

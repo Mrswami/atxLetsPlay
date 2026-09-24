@@ -18,7 +18,7 @@
 }
 
 /* ═══ DASHBOARD LAYER ═══
-   Floats on top of everything, fades out on scroll */
+   Floats on top of everything */
 .dashboard-layer {
   position: fixed;
   top: 0;
@@ -32,8 +32,7 @@
   gap: 0.85rem;
   max-width: 480px;
   margin: 0 auto;
-  will-change: opacity;
-  transition: opacity 0.05s linear;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
 /* ─── Header ─── */
@@ -892,3 +891,332 @@
     transform: translateX(-50%) translateY(-3px);
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   WORLD GLOBE FULLSCREEN MODE
+   ═══════════════════════════════════════════════════ */
+
+/* Dashboard state changes */
+.dashboard-layer {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.dashboard-layer.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.dashboard-layer.hidden {
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
+/* Fullscreen Globe Overlay */
+.world-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #0a0f1e;
+  display: flex;
+  flex-direction: column;
+}
+
+.world-fullscreen.entering {
+  animation: globeEnter 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.world-fullscreen.exiting {
+  animation: globeExit 0.35s ease-in both;
+}
+
+@keyframes globeEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes globeExit {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+/* Back button in world mode */
+.world-back-btn {
+  position: absolute;
+  top: 1.1rem;
+  left: 1rem;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 0.55rem 1rem 0.55rem 0.65rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.world-back-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.world-back-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(-2px);
+}
+
+.world-back-btn:active {
+  transform: scale(0.95);
+}
+
+/* ═══════════════════════════════════════════════════
+   GLOBE PREVIEW TEASER CARD
+   ═══════════════════════════════════════════════════ */
+
+.globe-preview-card {
+  width: 100%;
+  position: relative;
+  background: linear-gradient(135deg, rgba(15, 25, 55, 0.95), rgba(8, 15, 40, 0.98));
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  border-radius: 20px;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(125, 211, 252, 0.1);
+}
+
+.globe-preview-card:hover {
+  border-color: rgba(125, 211, 252, 0.5);
+  transform: translateY(-3px) scale(1.01);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(125, 211, 252, 0.15);
+}
+
+.globe-preview-card:active {
+  transform: scale(0.97);
+}
+
+/* Animated glow background */
+.gpc-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 80% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+  animation: glowPulse 4s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.gpc-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.gpc-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  animation: iconSpin 12s linear infinite;
+}
+
+@keyframes iconSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.gpc-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.gpc-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 20px rgba(125, 211, 252, 0.5);
+}
+
+.gpc-sub {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  color: rgba(125, 211, 252, 0.7);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.gpc-arrow {
+  color: rgba(125, 211, 252, 0.7);
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+.gpc-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+.globe-preview-card:hover .gpc-arrow {
+  transform: translateX(4px);
+  color: #7dd3fc;
+}
+
+/* Mini orbiting globe orb decoration */
+.gpc-mini-globe {
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  width: 90px;
+  height: 90px;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.gpc-orb {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #4ab8ff, #1a3e6b 60%, #0a1a3a);
+  box-shadow: inset -6px -6px 12px rgba(0, 0, 0, 0.4), 0 0 20px rgba(74, 184, 255, 0.3);
+  animation: orbFloat 6s ease-in-out infinite;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(10deg); }
+}
+
+/* ── World Globe Fullscreen Layer ── */
+.world-fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 999;
+  background: #0a0f1e;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.world-fullscreen.entering {
+  animation: worldEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.world-fullscreen.exiting {
+  animation: worldExit 0.35s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+@keyframes worldEnter {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes worldExit {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.96); }
+}
+
+.world-back-btn {
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top, 1rem));
+  left: 1rem;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+  padding: 0.65rem 1.2rem;
+  font-family: var(--font-display, 'Outfit', sans-serif);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+.world-back-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: var(--accent-primary, #38bdf8);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.world-back-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dashboard-layer.hidden {
+  display: none !important;
+}
+
+.dashboard-layer.visible {
+  display: block;
+}
+
+.floating-world-toggle {
+  position: fixed;
+  bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem));
+  right: 1.5rem;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 0.75rem 1.25rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(14, 165, 233, 0.45);
+  transition: all 0.25s ease;
+}
+
+.floating-world-toggle:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 12px 36px rgba(14, 165, 233, 0.6);
+}
+
+

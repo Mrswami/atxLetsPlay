@@ -169,16 +169,21 @@ export default function Onboarding() {
   return (
     <div className="onboarding-page">
       <div className="ob-wizard">
-        {/* Step Indicator */}
-        <div className="ob-steps">
-          {[1, 2, 3].map((s) => (
-            <div
-              key={s}
-              className={`ob-step-dot ${step === s ? 'active' : ''} ${step > s ? 'complete' : ''}`}
-            >
-              {s}
-            </div>
-          ))}
+        {/* Step Indicator & Skip */}
+        <div className="ob-top-bar">
+          <div className="ob-steps">
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                className={`ob-step-dot ${step === s ? 'active' : ''} ${step > s ? 'complete' : ''}`}
+              >
+                {s}
+              </div>
+            ))}
+          </div>
+          <button type="button" className="ob-skip-btn" onClick={() => navigate('/')}>
+            Skip to 3D World 🌍 →
+          </button>
         </div>
 
         {error && <div className="ob-error">{error}</div>}

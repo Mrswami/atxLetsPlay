@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
-import { SPORT_META } from '../data/courtsMeta';
+import { SPORT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
 import './Profile.css';
 
 export default function Profile() {
@@ -10,24 +13,44 @@ export default function Profile() {
 
   // If viewing own profile or another player's profile
   const isOwnProfile = !uid || uid === user?.uid;
+  const [targetProfile, setTargetProfile] = useState(null);
 
-  // For MVP: use logged in user's profile, or a fallback mock profile if viewing someone else
-  const profile = isOwnProfile
-    ? userProfile
-    : {
-        displayName: 'Austin Baller',
-        district: 'mueller',
-        xp: 1450,
-        gamesPlayed: 12,
-        gamesHosted: 4,
-        rep: 4.9,
-        sport_preferences: ['basketball', 'soccer'],
-        badges: ['pioneer', 'good-sport'],
-      };
+  useEffect(() => {
+    if (!isOwnProfile && uid) {
+      getDoc(doc(db, 'users', uid))
+        .then((snap) => {
+          if (snap.exists()) {
+            setTargetProfile(snap.data());
+          } else {
+            setTargetProfile({
+              displayName: 'Austin Baller',
+              district: 'mueller',
+              xp: 1450,
+              gamesPlayed: 12,
+              gamesHosted: 4,
+              rep: 4.9,
+              sport_preferences: ['basketball', 'soccer'],
+              badges: ['pioneer', 'good-sport'],
+            });
+          }
+        })
+        .catch((err) => {
+          console.warn('Error fetching target user profile:', err);
+        });
+    }
+  }, [uid, isOwnProfile]);
+
+  const profile = isOwnProfile ? userProfile : targetProfile;
+
 
   const displayName = profile?.displayName || user?.displayName || 'Player';
   const districtName = (profile?.district || 'Austin').replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   const xp = profile?.xp || 0;
+  const bio = profile?.bio || '';
+  const skillLevel = profile?.skillLevel || 'intermediate';
+  const playStyle = profile?.playStyle || 'chill';
+  const homeCourtId = profile?.homeCourtId || '';
+  const homeCourt = AUSTIN_COURTS_DATA.find((c) => c.id === homeCourtId);
   
   // XP level calculation: 1000 XP per level
   const currentLevel = Math.floor(xp / 1000) + 1;
@@ -55,6 +78,15 @@ export default function Profile() {
           </svg>
         </button>
         <h1>Player Profile</h1>
+        {isOwnProfile && (
+          <button
+            className="profile-edit-btn"
+            onClick={() => navigate('/settings')}
+            aria-label="Edit Profile & Settings"
+          >
+            <span>⚙️</span> Edit
+          </button>
+        )}
       </header>
 
       <div className="profile-container">
@@ -73,6 +105,26 @@ export default function Profile() {
 
           <h2 className="profile-name">{displayName}</h2>
           <p className="profile-district">📍 {districtName} District</p>
+
+          {homeCourt && (
+            <button
+              className="profile-home-court-chip"
+              onClick={() => navigate(`/court/${homeCourt.id}`)}
+            >
+              🏟️ Home Court: {homeCourt.shortName || homeCourt.name} →
+            </button>
+          )}
+
+          {bio && <p className="profile-bio">"{bio}"</p>}
+
+          <div className="profile-tags-row">
+            <span className="profile-meta-chip">
+              {playStyle === 'chill' ? '😌 Chill' : playStyle === 'athletic' ? '🏃‍♂️ Athletic' : playStyle === 'competitive' ? '🏆 Competitive' : '🤔 Curious'}
+            </span>
+            <span className="profile-meta-chip">
+              {skillLevel === 'casual' ? '🌱 Casual' : skillLevel === 'intermediate' ? '⚡ Intermediate' : skillLevel === 'advanced' ? '🔥 Advanced' : '👑 Elite'}
+            </span>
+          </div>
 
           {/* XP Progress Bar */}
           <div className="profile-xp-section">

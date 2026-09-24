@@ -21,13 +21,40 @@
   gap: 1.5rem;
 }
 
-/* Step Dots */
+/* Top Bar & Step Dots */
+.ob-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.ob-skip-btn {
+  background: rgba(var(--accent-primary-rgb), 0.12);
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.35);
+  color: var(--accent-primary);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.4rem 0.8rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.ob-skip-btn:hover {
+  background: rgba(var(--accent-primary-rgb), 0.25);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
 .ob-steps {
   display: flex;
   justify-content: center;
   gap: 1.5rem;
   position: relative;
-  margin-bottom: 0.5rem;
 }
 
 .ob-steps::after {

@@ -1,33 +1,76 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { useAuth } from '../contexts/AuthContext';
 import { DISTRICT_META } from '../data/courtsMeta';
 import './Leaderboard.css';
 
-// Static mockup leaderboard dataset
-const LEADERBOARD_DATA = [
-  { rank: 1, name: 'JD (You)', district: 'mueller', xp: 1800, avatarInitials: 'JD', isCurrentUser: true },
-  { rank: 2, name: 'Austin Baller', district: 'downtown', xp: 1450, avatarInitials: 'AB' },
-  { rank: 3, name: 'Pickle Queen', district: 'hyde-park', xp: 1200, avatarInitials: 'PQ' },
-  { rank: 4, name: 'GoalGetter', district: 'east', xp: 950, avatarInitials: 'GG' },
-  { rank: 5, name: 'Swami Software', district: 'mueller', xp: 850, avatarInitials: 'SS' },
-  { rank: 6, name: 'CourtHunter', district: 'norwood', xp: 600, avatarInitials: 'CH' },
-  { rank: 7, name: 'PetanqueKing', district: 'mueller', xp: 450, avatarInitials: 'PK' },
-  { rank: 8, name: 'SpikeMaster', district: 'south-congress', xp: 300, avatarInitials: 'SM' },
+// Fallback mockup leaderboard dataset if offline or empty
+const FALLBACK_LEADERBOARD = [
+  { id: 'mock-1', name: 'Austin Baller', district: 'downtown', xp: 1450, avatarInitials: 'AB' },
+  { id: 'mock-2', name: 'Pickle Queen', district: 'hyde-park', xp: 1200, avatarInitials: 'PQ' },
+  { id: 'mock-3', name: 'GoalGetter', district: 'east', xp: 950, avatarInitials: 'GG' },
+  { id: 'mock-4', name: 'Swami Software', district: 'mueller', xp: 850, avatarInitials: 'SS' },
+  { id: 'mock-5', name: 'CourtHunter', district: 'norwood', xp: 600, avatarInitials: 'CH' },
+  { id: 'mock-6', name: 'PetanqueKing', district: 'mueller', xp: 450, avatarInitials: 'PK' },
+  { id: 'mock-7', name: 'SpikeMaster', district: 'south-congress', xp: 300, avatarInitials: 'SM' },
 ];
 
 export default function Leaderboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedDistrict, setSelectedDistrict] = useState('all');
+  const [leaderboardData, setLeaderboardData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, 'users'),
+      orderBy('xp', 'desc'),
+      limit(50)
+    );
+
+    const unsubscribe = onSnapshot(q, (snap) => {
+      if (!snap.empty) {
+        const usersList = snap.docs.map((d) => {
+          const data = d.data();
+          const name = data.displayName || 'Player';
+          const initials = name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || 'ATX';
+          return {
+            id: d.id,
+            name,
+            district: data.district || 'downtown',
+            xp: data.xp || 0,
+            avatarInitials: initials,
+            avatarUrl: data.avatarUrl || '',
+            isCurrentUser: d.id === user?.uid,
+          };
+        });
+        setLeaderboardData(usersList);
+      } else {
+        setLeaderboardData(FALLBACK_LEADERBOARD);
+      }
+      setLoading(false);
+    }, (err) => {
+      console.warn('Leaderboard fetch fallback:', err);
+      setLeaderboardData(FALLBACK_LEADERBOARD);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   // Filter leaderboard based on district filter
   const filteredData = selectedDistrict === 'all'
-    ? LEADERBOARD_DATA
-    : LEADERBOARD_DATA.filter((p) => p.district === selectedDistrict);
+    ? leaderboardData
+    : leaderboardData.filter((p) => p.district === selectedDistrict);
 
   // Recalculate display ranks when filtered
   const displayedData = filteredData.map((player, idx) => ({
     ...player,
     displayRank: idx + 1,
+    isCurrentUser: player.id === user?.uid,
   }));
 
   return (
@@ -62,7 +105,12 @@ export default function Leaderboard() {
       {/* Rankings List */}
       <div className="lb-container">
         <div className="lb-list">
-          {displayedData.length === 0 ? (
+          {loading ? (
+            <div className="lb-empty">
+              <span>⚡</span>
+              <p>Loading leaderboard rankings...</p>
+            </div>
+          ) : displayedData.length === 0 ? (
             <div className="lb-empty">
               <span>🏜️</span>
               <p>No players ranked in this district yet.</p>
@@ -78,8 +126,10 @@ export default function Leaderboard() {
 
               return (
                 <div
-                  key={player.name}
+                  key={player.id || player.name}
                   className={`lb-item ${player.isCurrentUser ? 'current-user' : ''} ${isTop3 ? `top-${player.displayRank}` : ''}`}
+                  onClick={() => player.id && !player.id.startsWith('mock-') && navigate(`/profile/${player.id}`)}
+                  style={{ cursor: player.id && !player.id.startsWith('mock-') ? 'pointer' : 'default' }}
                 >
                   {/* Rank / Medal */}
                   <div className="lb-rank-wrapper">
@@ -90,14 +140,18 @@ export default function Leaderboard() {
                     )}
                   </div>
 
-                  {/* Avatar fallback */}
+                  {/* Avatar */}
                   <div className="lb-avatar">
-                    {player.avatarInitials}
+                    {player.avatarUrl ? (
+                      <img src={player.avatarUrl} alt={player.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      player.avatarInitials
+                    )}
                   </div>
 
                   {/* Player details */}
                   <div className="lb-info">
-                    <span className="lb-name">{player.name}</span>
+                    <span className="lb-name">{player.name} {player.isCurrentUser ? '(You)' : ''}</span>
                     <span className="lb-district">{districtLabel}</span>
                   </div>
 
@@ -120,3 +174,4 @@ export default function Leaderboard() {
     </div>
   );
 }
+

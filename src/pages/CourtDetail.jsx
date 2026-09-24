@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useCourt, useCourtGames, joinGame, leaveGame } from '../hooks/useCourts';
 import { useAuth } from '../contexts/AuthContext';
 import { SPORT_META } from '../data/courtsMeta';
@@ -9,11 +9,20 @@ import './CourtDetail.css';
 export default function CourtDetail() {
   const { courtId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { court, loading, error } = useCourt(courtId);
   const { games, loading: gamesLoading } = useCourtGames(courtId);
   const [viewMode, setViewMode] = useState('info'); // 'info' | '3d' | 'games'
   const [actionError, setActionError] = useState('');
+
+  function handleBack() {
+    if (location.state?.fromCreate || window.history.length <= 1) {
+      navigate('/');
+    } else {
+      navigate(-1);
+    }
+  }
 
   async function handleGameAction(game) {
     if (!user) {
@@ -62,8 +71,8 @@ export default function CourtDetail() {
         {/* Back button */}
         <button
           className="cd-back-btn"
-          onClick={() => navigate(`/district/${court.district}`)}
-          aria-label="Back to district"
+          onClick={handleBack}
+          aria-label="Back to previous screen"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="15 18 9 12 15 6" />
@@ -74,9 +83,6 @@ export default function CourtDetail() {
         <div className="court-hero-content">
           {!court.thumbnailUrl && (
             <span className="court-hero-emoji">{meta?.emoji || '🏟️'}</span>
-          )}
-          {court.modelUrl && (
-            <span className="court-3d-pill">✨ 3D Available</span>
           )}
         </div>
       </div>
@@ -99,7 +105,7 @@ export default function CourtDetail() {
 
       {/* ── Tab Nav ── */}
       <div className="cd-tabs">
-        {['info', '3d', 'games'].map((tab) => (
+        {['info', 'games'].map((tab) => (
           <button
             key={tab}
             className={`cd-tab ${viewMode === tab ? 'active' : ''}`}
@@ -107,7 +113,6 @@ export default function CourtDetail() {
             id={`cd-tab-${tab}`}
           >
             {tab === 'info' && '📋 Info'}
-            {tab === '3d' && '🌐 3D View'}
             {tab === 'games' && `🎮 Games${games.length > 0 ? ` (${games.length})` : ''}`}
           </button>
         ))}
@@ -161,49 +166,6 @@ export default function CourtDetail() {
           </div>
         )}
 
-        {/* 3D TAB */}
-        {viewMode === '3d' && (
-          <div className="cd-3d-tab">
-            {court.modelUrl ? (
-              <model-viewer
-                src={court.modelUrl}
-                alt={`3D model of ${court.name}`}
-                camera-controls
-                auto-rotate
-                ar
-                ar-modes="webxr scene-viewer"
-                shadow-intensity="1"
-                class="cd-model-viewer"
-              />
-            ) : (
-              <div className="cd-3d-placeholder">
-                <div className="cd-3d-placeholder-inner">
-                  <span className="cd-3d-icon">🎥</span>
-                  <h3>3D Model Coming Soon</h3>
-                  <p>
-                    This court is on our filming list! We'll be capturing
-                    it with our media pipeline and uploading a full 3D
-                    walkthrough rendered via OpenArt AI.
-                  </p>
-                  <div className="cd-3d-pipeline-steps">
-                    <span className={`pipeline-step ${court.filmingPriority <= 1 ? 'done' : ''}`}>
-                      📍 Mapped
-                    </span>
-                    <span className="pipeline-arrow">→</span>
-                    <span className="pipeline-step">🎬 Film</span>
-                    <span className="pipeline-arrow">→</span>
-                    <span className="pipeline-step">☁️ Drive Upload</span>
-                    <span className="pipeline-arrow">→</span>
-                    <span className="pipeline-step">🤖 OpenArt AI</span>
-                    <span className="pipeline-arrow">→</span>
-                    <span className="pipeline-step">✨ 3D Live</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* GAMES TAB */}
         {viewMode === 'games' && (
           <div className="cd-games-tab">
@@ -211,7 +173,13 @@ export default function CourtDetail() {
             <div className="cd-game-actions">
               <button
                 className="cd-action-btn cd-action-btn--call"
-                onClick={() => user ? navigate(`/create-game/${courtId}`) : navigate('/login')}
+                onClick={() =>
+                  user
+                    ? navigate(`/create-game/${courtId}`)
+                    : navigate(`/login?redirectTo=${encodeURIComponent(`/create-game/${courtId}`)}`, {
+                        state: { redirectTo: `/create-game/${courtId}` },
+                      })
+                }
                 id="call-next-btn"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
