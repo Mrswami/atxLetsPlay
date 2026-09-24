@@ -794,3 +794,59 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ── Mobile Responsive Optimizations for 2D Map Availability & Touch Navigation ── */
+@media (max-width: 640px) {
+  .austin-view-mode-pill {
+    top: max(4.2rem, env(safe-area-inset-top, 4.2rem));
+    left: 12px;
+    z-index: 60;
+    padding: 3px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 12px rgba(56, 189, 248, 0.25);
+  }
+
+  .avm-btn {
+    font-size: 0.75rem;
+    padding: 6px 13px;
+    touch-action: manipulation;
+  }
+
+  .austin-neighborhood-bar {
+    top: max(6.8rem, env(safe-area-inset-top, 6.8rem));
+  }
+
+  .austin-zoom-controls {
+    right: 10px;
+    padding: 5px;
+    gap: 8px;
+    z-index: 60;
+  }
+
+  .azc-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 0.95rem;
+  }
+
+  .azc-btn--mode {
+    font-size: 0.75rem;
+    font-weight: 800;
+  }
+
+  .austin-sport-filter {
+    bottom: max(4.8rem, env(safe-area-inset-bottom, 4.8rem));
+    padding: 3px;
+    z-index: 45;
+  }
+
+  .asf-pill {
+    padding: 5px 10px;
+    font-size: 0.72rem;
+  }
+
+  .world-globe-hint {
+    bottom: max(1.0rem, env(safe-area-inset-bottom, 1.0rem));
+    font-size: 0.70rem;
+    padding: 5px 12px;
+  }
+}

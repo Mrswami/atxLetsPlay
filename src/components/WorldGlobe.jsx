@@ -139,6 +139,39 @@ function createGroundLabel(text, lat, lng, width = 0.28, height = 0.07, fontSize
   return mesh;
 }
 
+// ── Crisp Uppercase Neighborhood Text Labels (Google Maps Dark Mode Style) ──
+function createNeighborhoodTextLabel(text, lat, lng, width = 0.36, height = 0.09, fontSize = 20, color = 'rgba(148, 163, 184, 0.80)') {
+  const canvas = document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 96;
+  const ctx = canvas.getContext('2d');
+
+  ctx.font = `900 ${fontSize}px system-ui, -apple-system, sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text.toUpperCase(), canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  const geo = new THREE.PlaneGeometry(width, height);
+  const mat = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    opacity: 0.82,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -3,
+    polygonOffsetUnits: -3,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  const pos = latLngToBoardPos(lat, lng, 0.0045);
+  mesh.position.copy(pos);
+  return mesh;
+}
+
 function createDistrictZone(lat, lng, radius, colorHex, opacity = 0.14) {
   const pos = latLngToBoardPos(lat, lng, 0.0016);
   const geo = new THREE.CircleGeometry(radius, 32);
@@ -568,14 +601,17 @@ function createAustinGeographicFeatures() {
   deckerLakeMesh.position.copy(deckerLakePos);
   geoGroup.add(deckerLakeMesh);
 
-  // 6. Major Austin Greenbelts & Parklands
+  // 6. Major Austin Greenbelts & Parklands (Google Maps Dark Mode Teal Green)
   const parklands = [
-    { name: 'Zilker Park', lat: 30.266, lng: -97.770, radius: 0.075, color: 0x14532d },
-    { name: 'Pease District Park', lat: 30.285, lng: -97.751, radius: 0.045, color: 0x14532d },
-    { name: 'Mueller Lake Park & Greenway', lat: 30.298, lng: -97.705, radius: 0.065, color: 0x15803d },
-    { name: 'Walnut Creek Metro Park', lat: 30.405, lng: -97.700, radius: 0.080, color: 0x166534 },
-    { name: 'McKinney Falls State Park', lat: 30.185, lng: -97.720, radius: 0.075, color: 0x166534 },
-    { name: 'Roy G. Guerrero Park', lat: 30.245, lng: -97.695, radius: 0.060, color: 0x14532d },
+    { name: 'Mayfield Park & Nature Preserve', lat: 30.312, lng: -97.771, radius: 0.085, color: 0x064e3b },
+    { name: 'Zilker Metropolitan Park', lat: 30.266, lng: -97.770, radius: 0.090, color: 0x064e3b },
+    { name: 'Barton Creek Greenbelt', lat: 30.245, lng: -97.795, radius: 0.085, color: 0x0a3d31 },
+    { name: 'Pease District Park', lat: 30.285, lng: -97.751, radius: 0.055, color: 0x064e3b },
+    { name: 'Mueller Lake Park & Greenway', lat: 30.298, lng: -97.705, radius: 0.070, color: 0x085446 },
+    { name: 'Walnut Creek Metro Park', lat: 30.405, lng: -97.700, radius: 0.090, color: 0x064e3b },
+    { name: 'Roy G. Guerrero Colorado River Park', lat: 30.245, lng: -97.695, radius: 0.070, color: 0x064e3b },
+    { name: 'McKinney Falls State Park', lat: 30.185, lng: -97.720, radius: 0.085, color: 0x0a3d31 },
+    { name: 'Hyde Park Green Corridor', lat: 30.304, lng: -97.732, radius: 0.050, color: 0x085446 },
   ];
 
   parklands.forEach((p) => {
@@ -584,7 +620,7 @@ function createAustinGeographicFeatures() {
     const pMat = new THREE.MeshBasicMaterial({
       color: p.color,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.48,
       side: THREE.DoubleSide,
       depthWrite: false,
     });
@@ -1045,6 +1081,28 @@ function createAustinGeographicFeatures() {
     // Flat Ground Name Label Badge
     const labelMesh = createGroundLabel(dz.label, dz.lat, dz.lng, 0.28, 0.07, 24, '#ffffff', 'rgba(15, 23, 42, 0.85)', '#38bdf8');
     geoGroup.add(labelMesh);
+  });
+
+  // 8b. Uppercase Google Maps Typography (District Labels matching dark mode screenshot)
+  const gmapsNeighborhoodLabels = [
+    { label: 'CRESTVIEW', lat: 30.352, lng: -97.722, w: 0.26 },
+    { label: 'HYDE PARK', lat: 30.304, lng: -97.732, w: 0.28 },
+    { label: 'CENTRAL AUSTIN', lat: 30.292, lng: -97.742, w: 0.36 },
+    { label: 'UNIVERSITY OF TEXAS AT AUSTIN', lat: 30.283, lng: -97.736, w: 0.52 },
+    { label: 'TEXAS CAPITOL', lat: 30.2747, lng: -97.7404, w: 0.32 },
+    { label: 'TARRYTOWN', lat: 30.292, lng: -97.770, w: 0.28 },
+    { label: 'MAYFIELD PARK AND NATURE PRESERVE', lat: 30.312, lng: -97.771, w: 0.56 },
+    { label: 'ZILKER', lat: 30.265, lng: -97.772, w: 0.24 },
+    { label: 'BARTON HILLS', lat: 30.252, lng: -97.780, w: 0.30 },
+    { label: 'BOULDIN CREEK', lat: 30.250, lng: -97.756, w: 0.32 },
+    { label: 'EAST CESAR CHAVEZ', lat: 30.255, lng: -97.718, w: 0.38 },
+    { label: 'EAST RIVERSIDE - OLTORF', lat: 30.235, lng: -97.725, w: 0.44 },
+    { label: 'SOUTH LAMAR', lat: 30.230, lng: -97.775, w: 0.30 },
+  ];
+
+  gmapsNeighborhoodLabels.forEach((nl) => {
+    const txtMesh = createNeighborhoodTextLabel(nl.label, nl.lat, nl.lng, nl.w, 0.08, 19, 'rgba(148, 163, 184, 0.82)');
+    geoGroup.add(txtMesh);
   });
 
   // 9. Major Highway Shield Ground Badges
