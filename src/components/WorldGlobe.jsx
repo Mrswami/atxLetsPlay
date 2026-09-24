@@ -1202,6 +1202,7 @@ export default function WorldGlobe({ onCourtSelect, activeGames = {}, activeGame
   const landmarkMeshesRef = useRef([]);
   const animFrameRef = useRef(null);
   const selectionRingRef = useRef(null);
+  const userMarkerMeshRef = useRef(null);
 
   // 2.5D Tabletop Camera & Navigation Tracking (Mueller initial focus)
   const initialFocusPos = latLngToBoardPos(30.2980, -97.7050);
@@ -1843,6 +1844,15 @@ export default function WorldGlobe({ onCourtSelect, activeGames = {}, activeGame
         selectionRingRef.current.scale.set(ringScale, ringScale, ringScale);
       }
 
+      // Pulse 3D User Location Red Dot Radar Ring
+      if (userMarkerMeshRef.current && userMarkerMeshRef.current.visible) {
+        const ringMesh = userMarkerMeshRef.current.children[1];
+        if (ringMesh) {
+          const pulseScale = 1.0 + Math.sin(frame * 0.08) * 0.22;
+          ringMesh.scale.set(pulseScale, pulseScale, pulseScale);
+        }
+      }
+
       // LOD State updates
       if (zoom < 1.0 && zoomLevelState !== 'detail') {
         setZoomLevelState('detail');
@@ -1919,13 +1929,76 @@ export default function WorldGlobe({ onCourtSelect, activeGames = {}, activeGame
     });
   }, [selectedSport]);
 
+  // ── Auto-request GPS Location on Mount ──
+  useEffect(() => {
+    requestLocation();
+  }, []);
+
+  // ── Sync 3D Red Dot User Location Marker on the Map Board ──
+  useEffect(() => {
+    if (!sceneRef.current) return;
+    if (userGeoPos) {
+      if (!userMarkerMeshRef.current) {
+        const group = new THREE.Group();
+        group.name = 'User_Location_Red_Dot_Beacon';
+
+        // Bright Crimson Red Dot Sphere
+        const dotGeo = new THREE.SphereGeometry(0.012, 16, 16);
+        const dotMat = new THREE.MeshStandardMaterial({
+          color: 0xef4444,
+          emissive: 0xef4444,
+          emissiveIntensity: 0.95,
+          roughness: 0.2,
+        });
+        const dotMesh = new THREE.Mesh(dotGeo, dotMat);
+        dotMesh.position.y = 0.012;
+
+        // Ground Pulsing Red Radar Ring
+        const ringGeo = new THREE.RingGeometry(0.024, 0.038, 32);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: 0xef4444,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.75,
+          depthWrite: false,
+        });
+        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+        ringMesh.rotation.x = -Math.PI / 2;
+        ringMesh.position.y = 0.005;
+
+        // Translucent Crimson Aura Disc
+        const auraGeo = new THREE.CircleGeometry(0.065, 32);
+        const auraMat = new THREE.MeshBasicMaterial({
+          color: 0xef4444,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.22,
+          depthWrite: false,
+        });
+        const auraMesh = new THREE.Mesh(auraGeo, auraMat);
+        auraMesh.rotation.x = -Math.PI / 2;
+        auraMesh.position.y = 0.004;
+
+        group.add(dotMesh, ringMesh, auraMesh);
+        sceneRef.current.add(group);
+        userMarkerMeshRef.current = group;
+      }
+
+      const pos = latLngToBoardPos(userGeoPos.lat, userGeoPos.lng, 0.005);
+      userMarkerMeshRef.current.position.set(pos.x, 0, pos.z);
+      userMarkerMeshRef.current.visible = true;
+    } else if (userMarkerMeshRef.current) {
+      userMarkerMeshRef.current.visible = false;
+    }
+  }, [userGeoPos]);
+
   // ── Auto-pan to user on first GPS fix ──
   useEffect(() => {
     if (!userGeoPos || userLocPinnedRef.current) return;
     userLocPinnedRef.current = true;
     const boardPos = latLngToBoardPos(userGeoPos.lat, userGeoPos.lng);
     desiredTargetPosRef.current = { x: boardPos.x, z: boardPos.z };
-    targetZoomRef.current = 0.72;
+    targetZoomRef.current = 0.68;
     velocityRef.current = { x: 0, z: 0 };
   }, [userGeoPos]);
 
@@ -2102,27 +2175,29 @@ export default function WorldGlobe({ onCourtSelect, activeGames = {}, activeGame
         ))}
       </div>
 
-      {/* User location avatar marker */}
-      {userMarkerScreen && (
+      {/* User Location Red Dot Beacon Marker */}
+      {userMarkerScreen && userGeoPos && (
         <div
           className="user-location-marker"
           style={{ left: userMarkerScreen.x, top: userMarkerScreen.y }}
-          title={`You are here${userProfile?.displayName ? ` · ${userProfile.displayName}` : ''}`}
+          onClick={() => {
+            const boardPos = latLngToBoardPos(userGeoPos.lat, userGeoPos.lng);
+            desiredTargetPosRef.current = { x: boardPos.x, z: boardPos.z };
+            targetZoomRef.current = 0.65;
+            velocityRef.current = { x: 0, z: 0 };
+          }}
+          title={`You are here (${userGeoPos.lat.toFixed(4)}, ${userGeoPos.lng.toFixed(4)}) · Tap to search nearby courts`}
         >
-          <div className="ulm-pulse-ring" />
-          <div className="ulm-pulse-ring ulm-pulse-ring--delay" />
-          <div className="ulm-avatar-circle">
+          <div className="ulm-red-pulse-ring" />
+          <div className="ulm-red-pulse-ring ulm-red-pulse-ring--delay" />
+          <div className="ulm-red-dot">
             {userProfile?.avatarUrl ? (
               <img src={userProfile.avatarUrl} alt="You" className="ulm-avatar-img" />
             ) : (
-              <span className="ulm-avatar-initials">
-                {userProfile?.displayName
-                  ? userProfile.displayName.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
-                  : '👤'}
-              </span>
+              <span className="ulm-red-dot-core" />
             )}
           </div>
-          <div className="ulm-label">You</div>
+          <div className="ulm-label">🔴 YOU ARE HERE</div>
         </div>
       )}
 
