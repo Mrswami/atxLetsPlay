@@ -102,16 +102,20 @@ export default function Home() {
 
   const openWorld = useCallback(() => {
     setGlobeExitAnim(false);
-    setWorldMode(true);
+    setViewMode('world');
   }, []);
 
   const closeWorld = useCallback(() => {
     setGlobeExitAnim(true);
     setTimeout(() => {
-      setWorldMode(false);
+      setViewMode('dashboard');
       setGlobeExitAnim(false);
     }, 380);
-  }, []);  return (
+  }, []);
+
+  const handleCourtSelect = useCallback((courtId) => {
+    navigate(`/court/${courtId}`);
+  }, [navigate]);  return (
     <div
       className={`home-page ${searchFocused ? 'search-active' : ''}`}
       ref={containerRef}
@@ -377,7 +381,7 @@ export default function Home() {
       )}
 
       {/* Floating 3D World toggle button when in dashboard mode */}
-      {!worldMode && (
+      {viewMode === 'dashboard' && (
         <button
           className="floating-world-toggle"
           onClick={openWorld}

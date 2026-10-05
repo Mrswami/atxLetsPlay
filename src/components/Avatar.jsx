@@ -11,9 +11,7 @@ export default function Avatar({ url, name, size = 'large', xp = 0 }) {
       {url ? (
         <img src={url} alt={name || 'Avatar'} className="avatar-img" />
       ) : (
-        <div className="avatar-placeholder">
-          <span className="avatar-initials">{initials}</span>
-        </div>
+        <img src="/assets/raw/character_avatar_0.png" alt={name || 'Default Avatar'} className="avatar-img" />
       )}
       {xp > 0 && (
         <div className="avatar-xp-badge">
