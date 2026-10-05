@@ -121,9 +121,9 @@ const CARTO_PARAMS = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : '';
 
 const TILE_LAYERS = {
   google_street: {
-    name: '🗺️ Google Street Map',
-    url: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${CARTO_PARAMS}`,
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    name: '🗺️ Default Street Map',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; OpenStreetMap contributors',
   },
   google_satellite: {
     name: '🛰️ Google Satellite Imagery',
