@@ -116,10 +116,13 @@ const MAP_LOCATIONS = [
   },
 ];
 
+const CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY || '';
+const CARTO_PARAMS = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : '';
+
 const TILE_LAYERS = {
   google_street: {
     name: '🗺️ Google Street Map',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    url: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${CARTO_PARAMS}`,
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
   },
   google_satellite: {
@@ -134,7 +137,7 @@ const TILE_LAYERS = {
   },
   carto_dark: {
     name: '🌙 Dark Vector Map',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    url: `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png${CARTO_PARAMS}`,
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
   },
 };
