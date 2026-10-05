@@ -91,6 +91,62 @@ function createAustinGridTexture() {
   return texture;
 }
 
+// ── Google Maps / Street & Satellite Map Tile Ground Overlay Texture ──
+function createGoogleMapsBoardTexture(style = 'google_street', onUpdate = null) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 2048;
+  canvas.height = 2048;
+  const ctx = canvas.getContext('2d');
+
+  // Realistic map background color fill so there is NEVER any empty blue void
+  ctx.fillStyle = style === 'google_satellite' ? '#1c2d1c' : style === 'google_street' ? '#f1f5f9' : '#0f172a';
+  ctx.fillRect(0, 0, 2048, 2048);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.anisotropy = 8;
+
+  if (style === 'digital_grid') {
+    return createAustinGridTexture();
+  }
+
+  let getTileUrl = (z, x, y) => `https://a.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png`;
+  if (style === 'google_satellite') {
+    getTileUrl = (z, x, y) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+  } else if (style === 'google_terrain') {
+    getTileUrl = (z, x, y) => `https://a.tile.opentopomap.org/${z}/${x}/${y}.png`;
+  } else if (style === 'google_dark') {
+    getTileUrl = (z, x, y) => `https://a.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`;
+  }
+
+  // Zoom 13 tiles centered precisely at Texas State Capitol (lat 30.2747, lng -97.7404):
+  // Center tile: x = 1871, y = 3372
+  const zoom = 13;
+  const startX = 1867;
+  const startY = 3368;
+  const tileSize = 256;
+  const cols = 8;
+  const rows = 8;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const tileX = startX + c;
+      const tileY = startY + r;
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        ctx.drawImage(img, c * tileSize, r * tileSize, tileSize, tileSize);
+        texture.needsUpdate = true;
+        if (onUpdate) onUpdate();
+      };
+      img.src = getTileUrl(zoom, tileX, tileY);
+    }
+  }
+
+  return texture;
+}
+
 // ── Text Sprite & Ground Badge Helpers ──
 function createTextSprite(text, fontSize = 26, color = '#f8fafc', bgColor = 'rgba(15, 23, 42, 0.88)', borderColor = 'rgba(56, 189, 248, 0.55)') {
   const canvas = document.createElement('canvas');
@@ -1074,11 +1130,7 @@ function createAustinGeographicFeatures() {
   ];
 
   districtZones.forEach((dz) => {
-    // Ambient colored circle patch
-    const zoneMesh = createDistrictZone(dz.lat, dz.lng, dz.radius, dz.color, 0.15);
-    geoGroup.add(zoneMesh);
-
-    // Flat Ground Name Label Badge
+    // Flat Ground Name Label Badge (Clean floating labels over real map tiles)
     const labelMesh = createGroundLabel(dz.label, dz.lat, dz.lng, 0.28, 0.07, 24, '#ffffff', 'rgba(15, 23, 42, 0.85)', '#38bdf8');
     geoGroup.add(labelMesh);
   });
@@ -1204,13 +1256,13 @@ export default function WorldGlobe({ onCourtSelect, activeGames = {}, activeGame
   const selectionRingRef = useRef(null);
   const userMarkerMeshRef = useRef(null);
 
-  // 2.5D Tabletop Camera & Navigation Tracking (Mueller initial focus)
-  const initialFocusPos = latLngToBoardPos(30.2980, -97.7050);
+  // 2.5D Tabletop Camera & Navigation Tracking (Centered on Texas State Capitol / Downtown)
+  const initialFocusPos = latLngToBoardPos(30.2747, -97.7404);
   const currentTargetPosRef = useRef({ x: initialFocusPos.x, z: initialFocusPos.z });
   const desiredTargetPosRef = useRef({ x: initialFocusPos.x, z: initialFocusPos.z });
 
-  const currentZoomRef = useRef(0.75); // Mueller zoom level
-  const targetZoomRef = useRef(0.75);
+  const currentZoomRef = useRef(0.68); // Downtown Capitol focal zoom
+  const targetZoomRef = useRef(0.68);
 
   // Gesture, swipe momentum & inertia tracking
   const velocityRef = useRef({ x: 0, z: 0 });
@@ -1220,7 +1272,9 @@ export default function WorldGlobe({ onCourtSelect, activeGames = {}, activeGame
   const [selectedLandmark, setSelectedLandmark] = useState(null);
   const [selectedSport, setSelectedSport] = useState('all');
   const selectedSportRef = useRef('all');
-  const [activeDistrict, setActiveDistrict] = useState('Mueller');
+  const [activeDistrict, setActiveDistrict] = useState('Downtown');
+  const [mapGroundStyle, setMapGroundStyle] = useState('google_street'); // 'google_street' | 'google_satellite' | 'google_terrain' | 'google_dark'
+  const canvasMatRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
   const [zoomLevelState, setZoomLevelState] = useState('detail');
   const [viewMode, setViewMode] = useState('3d'); // '3d' | '2d' (Google Maps style)
@@ -1230,6 +1284,13 @@ export default function WorldGlobe({ onCourtSelect, activeGames = {}, activeGame
   useEffect(() => {
     viewModeRef.current = viewMode;
   }, [viewMode]);
+
+  useEffect(() => {
+    if (canvasMatRef.current) {
+      canvasMatRef.current.map = createGoogleMapsBoardTexture(mapGroundStyle);
+      canvasMatRef.current.needsUpdate = true;
+    }
+  }, [mapGroundStyle]);
 
   // ── User Location ──
   const { position: userGeoPos, error: locationError, loading: locationLoading, request: requestLocation } = useUserLocation();
@@ -1329,7 +1390,7 @@ export default function WorldGlobe({ onCourtSelect, activeGames = {}, activeGame
     // Base Metro Ground surface (14.0 x 14.0 covering Greater Austin)
     const canvasGeo = new THREE.PlaneGeometry(BOARD_WIDTH, BOARD_DEPTH);
     const canvasMat = new THREE.MeshStandardMaterial({
-      color: 0x091024,
+      color: 0xffffff,
       roughness: 0.85,
       metalness: 0.05,
     });
@@ -1338,10 +1399,11 @@ export default function WorldGlobe({ onCourtSelect, activeGames = {}, activeGame
     canvasMesh.receiveShadow = true;
     boardGroup.add(canvasMesh);
 
-    // Procedural Dark Digital Vector Grid texture
-    const gridTexture = createAustinGridTexture();
+    // Google Maps & CARTO Real Street Map Ground Texture Overlay
+    const gridTexture = createGoogleMapsBoardTexture(mapGroundStyle);
     canvasMat.map = gridTexture;
     canvasMat.needsUpdate = true;
+    canvasMatRef.current = canvasMat;
 
     // Add Procedural Colorado River, Lake Austin, highways & district zones
     const geoFeatures = createAustinGeographicFeatures();

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import SearchBar from '../components/SearchBar';
 import Avatar from '../components/Avatar';
 import WorldGlobe from '../components/WorldGlobe';
+import AustinStreetMap from '../components/AustinStreetMap';
 import { useAllActiveGames } from '../hooks/useCourts';
 import { SPORT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
 import { collection, getDocs } from 'firebase/firestore';
@@ -14,8 +15,8 @@ export default function Home() {
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   const containerRef = useRef(null);
-  // Default to 3D stylized world immediately so users can explore courts instantly without sign-up
-  const [worldMode, setWorldMode] = useState(true);
+  // Default to real street/terrain map view matching user's reference map
+  const [viewMode, setViewMode] = useState('street'); // 'street' | 'world' | 'dashboard'
   const [courts, setCourts] = useState(AUSTIN_COURTS_DATA || []);
   const [showCourtSelect, setShowCourtSelect] = useState(false);
   const [globeExitAnim, setGlobeExitAnim] = useState(false);
@@ -110,28 +111,49 @@ export default function Home() {
       setWorldMode(false);
       setGlobeExitAnim(false);
     }, 380);
-  }, []);
-
-  const handleCourtSelect = useCallback((court) => {
-    navigate(`/court/${court.id}`);
-  }, [navigate]);
-
-  return (
+  }, []);  return (
     <div
       className={`home-page ${searchFocused ? 'search-active' : ''}`}
       ref={containerRef}
     >
-      {/* Search overlay backdrop */}
-      {searchFocused && (
-        <div
-          className="search-overlay-backdrop"
-          onClick={() => setSearchFocused(false)}
-        />
+      {/* Floating Top Mode Selector */}
+      <div className="view-mode-floating-bar">
+        <button
+          className={`vmf-btn ${viewMode === 'street' ? 'active' : ''}`}
+          onClick={() => setViewMode('street')}
+        >
+          🗺️ Street Map
+        </button>
+        <button
+          className={`vmf-btn ${viewMode === 'world' ? 'active' : ''}`}
+          onClick={() => setViewMode('world')}
+        >
+          🌍 3D World
+        </button>
+        <button
+          className={`vmf-btn ${viewMode === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setViewMode('dashboard')}
+        >
+          📊 Dashboard
+        </button>
+      </div>
+
+      {/* ── 1. REAL STREET & TERRAIN MAP (MATCHING REFERENCE IMAGE) ── */}
+      {viewMode === 'street' && (
+        <div className="street-map-fullscreen">
+          <AustinStreetMap
+            onPlaceSelect={(place) => {
+              if (place.category === 'court') {
+                navigate(`/court/${place.id}`);
+              }
+            }}
+          />
+        </div>
       )}
 
-      {/* ── WORLD GLOBE FULLSCREEN MODE ── */}
-      {worldMode && (
-        <div className={`world-fullscreen ${globeExitAnim ? 'exiting' : 'entering'}`}>
+      {/* ── 2. WORLD GLOBE 3D MODE ── */}
+      {viewMode === 'world' && (
+        <div className="world-fullscreen entering">
           <WorldGlobe
             onCourtSelect={handleCourtSelect}
             activeGames={gamesCountPerCourt}
@@ -148,26 +170,18 @@ export default function Home() {
               navigate(`/court/${game.courtId}`);
             }}
           />
-          {/* Back button */}
-          <button
-            className="world-back-btn"
-            onClick={closeWorld}
-            id="world-back-btn"
-            aria-label="Back to dashboard"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            Dashboard
-          </button>
         </div>
       )}
 
-      {/* ── DASHBOARD LAYER ── */}
-      <div
-        className={`dashboard-layer ${worldMode ? 'hidden' : 'visible'}`}
-      >
-        {/* Header */}
+      {/* ── 3. DASHBOARD LAYER ── */}
+      <div className={`dashboard-layer ${viewMode === 'dashboard' ? 'visible' : 'hidden'}`}>
+        {/* Search overlay backdrop */}
+        {searchFocused && (
+          <div
+            className="search-overlay-backdrop"
+            onClick={() => setSearchFocused(false)}
+          />
+        )}
         <header className="home-header">
           <span className="header-brand">
             <span className="hb-atx">ATX</span>

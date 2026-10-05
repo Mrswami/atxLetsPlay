@@ -1,0 +1,53 @@
+{
+  "project": "letsPlayATX",
+  "styles": {
+    "characters": "3D Stylized (e.g., Pixar or Fortnite style), vibrant colors, smooth textures, soft lighting, solid color background.",
+    "landmarks": "3D Stylized icon, simplified geometry, isometric view, toy-like appearance, vibrant colors, solid color background.",
+    "ui": "Flat, vibrant, modern, clean, solid color background."
+  },
+  "prompts": {
+    "characters": {
+      "template": "A 3D stylized avatar of a {description}, asymmetric design, highly distinct personality, {style_characters}",
+      "examples": [
+        "rebellious teenage skateboarder with mismatched shoes, a crooked backwards cap, and a scraped knee",
+        "intense competitive basketball player with a sweatband over one eye and a colorful neon arm sleeve",
+        "quirky casual player wearing vintage neon roller skates, oversized asymmetrical sunglasses, and a fanny pack"
+      ]
+    },
+    "landmarks": {
+      "template": "A 3D stylized icon of a {landmark_name}, {style_landmarks}",
+      "examples": [
+        "Zilker Park Courts",
+        "Pease Park Courts",
+        "generic soccer field with bright green turf, corner flags, and a scattered ball",
+        "generic sand volleyball court with a sun-bleached net and sandy dunes",
+        "generic petanque court with gravel texture, wooden borders, and scattered metal boules",
+        "generic outdoor bowling alley with shiny wooden lanes, retro pins, and neon accents"
+      ]
+    },
+    "ui_buttons": {
+      "template": "A modern flat UI action button for '{button_text}', vibrant, clean, {style_ui}",
+      "examples": [
+        "Play",
+        "Search",
+        "Invite",
+        "Map",
+        "Profile"
+      ]
+    },
+    "ui_panels": {
+      "template": "A modern flat UI panel for '{panel_type}', vibrant, clean, {style_ui}",
+      "examples": [
+        "Player profile background",
+        "Court info card",
+        "Leaderboard"
+      ]
+    }
+  },
+  "asset_generation_workflow": {
+    "step_1": "Generate raw images using OpenArt based on the specified templates and examples.",
+    "step_2": "Run the local post-processing script (`process_assets.js` or `.py`) to crop images and remove backgrounds where necessary.",
+    "step_3": "The script will automatically convert all final assets to highly-optimized `.webp` format.",
+    "step_4": "Save the optimized WebP images directly to the `public/assets/` directory."
+  }
+}
