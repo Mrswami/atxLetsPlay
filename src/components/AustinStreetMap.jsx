@@ -116,31 +116,31 @@ const MAP_LOCATIONS = [
   },
 ];
 
-const CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY || '';
-const CARTO_PARAMS = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : '';
-
 const TILE_LAYERS = {
-  google_street: {
-    name: '🗺️ Default Street Map',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenStreetMap contributors',
+  esri_gray: {
+    name: '🗺️ Minimal Clean World',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
   },
   google_satellite: {
-    name: '🛰️ Google Satellite Imagery',
+    name: '🛰️ Real Satellite Imagery',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; Esri World Imagery &copy; Google Maps contributors',
-  },
-  topo_terrain: {
-    name: '⛰️ Topographic Terrain',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenTopoMap contributors',
-  },
-  carto_dark: {
-    name: '🌙 Dark Vector Map',
-    url: `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png${CARTO_PARAMS}`,
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    attribution: '&copy; Esri World Imagery',
   },
 };
+
+const DISTRICT_COLORS = [
+  '#f43f5e', // Rose
+  '#3b82f6', // Blue
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+  '#06b6d4', // Cyan
+  '#84cc16', // Lime
+  '#f97316', // Orange
+  '#6366f1', // Indigo
+];
 
 export default function AustinStreetMap({ onPlaceSelect }) {
   const mapContainerRef = useRef(null);
@@ -148,7 +148,7 @@ export default function AustinStreetMap({ onPlaceSelect }) {
   const markersRef = useRef([]);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTileLayer, setSelectedTileLayer] = useState('google_street');
+  const [selectedTileLayer, setSelectedTileLayer] = useState('esri_gray');
   const [currentZoom, setCurrentZoom] = useState(11);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -219,6 +219,28 @@ export default function AustinStreetMap({ onPlaceSelect }) {
 
       // Render place markers
       renderMarkers(MAP_LOCATIONS);
+
+      // Fetch and Overlay Austin Council Districts as colored cartoon zones
+      fetch('https://data.austintexas.gov/resource/k9zd-e4ta.geojson')
+        .then((res) => res.json())
+        .then((geoData) => {
+          if (!mapInstanceRef.current) return;
+          L.geoJSON(geoData, {
+            style: (feature) => {
+              // Assign a vibrant color to each district
+              const distNum = feature.properties.council_district || 1;
+              const color = DISTRICT_COLORS[(distNum - 1) % DISTRICT_COLORS.length];
+              return {
+                color: '#ffffff', // Clean white borders
+                weight: 2,
+                fillColor: color,
+                fillOpacity: 0.15, // Subtle tint over the map
+                dashArray: '5',
+              };
+            },
+          }).addTo(mapInstanceRef.current);
+        })
+        .catch((err) => console.log('Failed to load district bounds:', err));
     }
 
     initLeafletMap();
