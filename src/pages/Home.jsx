@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SearchBar from '../components/SearchBar';
 import Avatar from '../components/Avatar';
-import WorldGlobe from '../components/WorldGlobe';
 import AustinStreetMap from '../components/AustinStreetMap';
 import { useAllActiveGames } from '../hooks/useCourts';
 import { SPORT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
@@ -16,10 +15,9 @@ export default function Home() {
   const navigate = useNavigate();
   const containerRef = useRef(null);
   // Default to real street/terrain map view matching user's reference map
-  const [viewMode, setViewMode] = useState('street'); // 'street' | 'world' | 'dashboard'
+  const [viewMode, setViewMode] = useState('street'); // 'street' | 'dashboard'
   const [courts, setCourts] = useState(AUSTIN_COURTS_DATA || []);
   const [showCourtSelect, setShowCourtSelect] = useState(false);
-  const [globeExitAnim, setGlobeExitAnim] = useState(false);
 
   const displayName = userProfile?.displayName || user?.displayName || 'Player';
   const xp = userProfile?.xp || 0;
@@ -100,17 +98,8 @@ export default function Home() {
       });
   }, []);
 
-  const openWorld = useCallback(() => {
-    setGlobeExitAnim(false);
-    setViewMode('world');
-  }, []);
-
-  const closeWorld = useCallback(() => {
-    setGlobeExitAnim(true);
-    setTimeout(() => {
-      setViewMode('dashboard');
-      setGlobeExitAnim(false);
-    }, 380);
+  const closeDashboard = useCallback(() => {
+    setViewMode('street');
   }, []);
 
   const handleCourtSelect = useCallback((courtId) => {
@@ -126,13 +115,7 @@ export default function Home() {
           className={`vmf-btn ${viewMode === 'street' ? 'active' : ''}`}
           onClick={() => setViewMode('street')}
         >
-          🗺️ Street Map
-        </button>
-        <button
-          className={`vmf-btn ${viewMode === 'world' ? 'active' : ''}`}
-          onClick={() => setViewMode('world')}
-        >
-          🌍 3D World
+          🗺️ Overworld Map
         </button>
         <button
           className={`vmf-btn ${viewMode === 'dashboard' ? 'active' : ''}`}
@@ -155,29 +138,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── 2. WORLD GLOBE 3D MODE ── */}
-      {viewMode === 'world' && (
-        <div className="world-fullscreen entering">
-          <WorldGlobe
-            onCourtSelect={handleCourtSelect}
-            activeGames={gamesCountPerCourt}
-            activeGamesList={gamesByCourt}
-            userProfile={userProfile}
-            onCallNext={(courtId) => {
-              user
-                ? navigate(`/create-game/${courtId}`)
-                : navigate(`/login?redirectTo=${encodeURIComponent(`/create-game/${courtId}`)}`, {
-                    state: { redirectTo: `/create-game/${courtId}` },
-                  });
-            }}
-            onJoinGame={(game) => {
-              navigate(`/court/${game.courtId}`);
-            }}
-          />
-        </div>
-      )}
-
-      {/* ── 3. DASHBOARD LAYER ── */}
+      {/* ── 2. DASHBOARD LAYER ── */}
       <div className={`dashboard-layer ${viewMode === 'dashboard' ? 'visible' : 'hidden'}`}>
         {/* Search overlay backdrop */}
         {searchFocused && (
@@ -319,25 +280,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* ── Globe World Preview (teaser card) ── */}
-        <div className="globe-preview-card" onClick={openWorld} id="globe-world-btn">
-          <div className="gpc-glow" />
-          <div className="gpc-content">
-            <div className="gpc-icon">🌐</div>
-            <div className="gpc-text">
-              <span className="gpc-title">Explore ATX World</span>
-              <span className="gpc-sub">Spin the globe · Tap courts</span>
-            </div>
-            <div className="gpc-arrow">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
-          <div className="gpc-mini-globe">
-            <div className="gpc-orb" />
-          </div>
-        </div>
       </div>
 
       {/* Court Selection Drawer */}
@@ -380,18 +322,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Floating 3D World toggle button when in dashboard mode */}
-      {viewMode === 'dashboard' && (
-        <button
-          className="floating-world-toggle"
-          onClick={openWorld}
-          id="floating-world-btn"
-          aria-label="Enter 3D World"
-        >
-          <span>🌍</span>
-          <span>Explore 3D World</span>
-        </button>
-      )}
     </div>
   );
 }
