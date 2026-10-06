@@ -541,3 +541,7 @@
   margin-bottom: 0.75rem;
   text-align: center;
 }
+
+.cd-hero-3d-icon { width: 140px; height: 140px; object-fit: contain; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5)); animation: float 6s ease-in-out infinite; }
+@keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+

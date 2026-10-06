@@ -56,10 +56,7 @@ export default function AustinStreetMap({ onPlaceSelect }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTileLayer, setSelectedTileLayer] = useState('esri_gray');
   const [currentZoom, setCurrentZoom] = useState(12);
-  const [selectedPlace, setSelectedPlace] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [aiAnswer, setAiAnswer] = useState('');
-  const [showAiGuide, setShowAiGuide] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
 
   // Load Leaflet dynamically if not already present on window
@@ -215,7 +212,6 @@ export default function AustinStreetMap({ onPlaceSelect }) {
         const marker = L.marker([court.coords.lat, court.coords.lng], { icon: customIcon });
 
         marker.on('click', () => {
-          setSelectedPlace(court);
           if (onPlaceSelect) onPlaceSelect({ id: court.id, category: 'court' });
         });
 
@@ -240,8 +236,6 @@ export default function AustinStreetMap({ onPlaceSelect }) {
           locations: MAP_LOCATIONS,
           model: 'gpt-4o-mini',
         });
-
-        setAiAnswer(result.explanation || '');
 
         if (result.matchedIds && result.matchedIds.length > 0) {
           const firstId = result.matchedIds[0];
@@ -382,27 +376,18 @@ export default function AustinStreetMap({ onPlaceSelect }) {
         </select>
       </div>
 
-      {/* OpenAI AI Search Summary Banner */}
-      {aiAnswer && (
-        <div className="asm-ai-banner">
-          <span className="asm-ai-badge">🤖 OpenAI Smart Match</span>
-          <p>{aiAnswer}</p>
-          <button className="asm-ai-close" onClick={() => setAiAnswer('')}>
-            ✕
-          </button>
-        </div>
-      )}
+
 
       {/* Slide-out District Sidebar */}
       {activeDistrictZone && (
         <div className="asm-district-sidebar">
           <div className="asm-sidebar-header">
             <h2>{activeDistrictZone} Courts</h2>
-            <button onClick={() => { setActiveDistrictZone(null); setSelectedPlace(null); }}>✕</button>
+            <button onClick={() => setActiveDistrictZone(null)}>✕</button>
           </div>
           <div className="asm-sidebar-list">
             {AUSTIN_COURTS_DATA.filter(c => getCartoonZone(c.district) === activeDistrictZone).map(court => (
-              <div key={court.id} className="asm-sidebar-item" onClick={() => setSelectedPlace(court)}>
+              <div key={court.id} className="asm-sidebar-item" onClick={() => { if (onPlaceSelect) onPlaceSelect({ id: court.id, category: 'court' }); }}>
                 <span className="asm-item-icon" dangerouslySetInnerHTML={{ __html: getCartoonIcon(court.id) }}></span>
                 <div className="asm-item-info">
                   <h4>{court.name}</h4>
@@ -410,45 +395,6 @@ export default function AustinStreetMap({ onPlaceSelect }) {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* Place Detail Card */}
-      {selectedPlace && (
-        <div className="asm-place-card anim-scale-in">
-          <button className="asm-card-close" onClick={() => setSelectedPlace(null)}>
-            ✕
-          </button>
-          <div className="asm-card-header">
-            <span className="asm-card-icon" dangerouslySetInnerHTML={{ __html: getCartoonIcon(selectedPlace.id) }}></span>
-            <div>
-              <h3>{selectedPlace.name}</h3>
-              <span className="asm-card-district">{(selectedPlace.district || '').toUpperCase()}</span>
-            </div>
-          </div>
-          <p className="asm-card-address">📍 {selectedPlace.address || 'Austin, TX'}</p>
-          <p className="asm-card-desc">{selectedPlace.description || 'Awesome local court.'}</p>
-          <div className="asm-card-actions">
-            <button
-              className="asm-action-btn primary"
-              onClick={async () => {
-                setShowAiGuide(true);
-                setAiAnswer('Asking ATX Scout AI guide...');
-                try {
-                  const reply = await askAustinAiAssistant({
-                    prompt: `Give me top tips, best times to visit, and activity suggestions for ${selectedPlace.name} in Austin.`,
-                    locationContext: selectedPlace,
-                    model: 'gpt-4o-mini',
-                  });
-                  setAiAnswer(reply);
-                } catch (err) {
-                  setAiAnswer(`OpenAI Guide Tip: Great spot in ${selectedPlace.district}! Perfect for daytime activity.`);
-                }
-              }}
-            >
-              🤖 Ask AI Guide Tips
-            </button>
           </div>
         </div>
       )}

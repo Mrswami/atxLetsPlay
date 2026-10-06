@@ -848,3 +848,10 @@ export const AUSTIN_COURTS_DATA = [
   },
 ];
 
+
+export const getCartoonImageUrl = (courtId) => {
+  const sum = courtId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  const index = sum % 6;
+  return "/assets/raw/landmark_court_.png";
+};
+

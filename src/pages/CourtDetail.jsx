@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useCourt, useCourtGames, joinGame, leaveGame } from '../hooks/useCourts';
 import { useAuth } from '../contexts/AuthContext';
-import { SPORT_META } from '../data/courtsMeta';
+import { SPORT_META, getCartoonImageUrl } from '../data/courtsMeta';
 import Loading from '../components/Loading';
 import './CourtDetail.css';
 
@@ -82,7 +82,11 @@ export default function CourtDetail() {
         {/* Hero content */}
         <div className="court-hero-content">
           {!court.thumbnailUrl && (
-            <span className="court-hero-emoji">{meta?.emoji || '🏟️'}</span>
+            <img 
+              src={getCartoonImageUrl(court.id)} 
+              alt="Court 3D Icon" 
+              className="cd-hero-3d-icon" 
+            />
           )}
         </div>
       </div>
