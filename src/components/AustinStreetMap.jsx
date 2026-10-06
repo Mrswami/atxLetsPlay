@@ -3,119 +3,22 @@ import { searchMapWithOpenAI, askAustinAiAssistant, getStoredOpenAIKey } from '.
 import { AUSTIN_DISTRICTS_GEOJSON } from './austinDistricts';
 import './AustinStreetMap.css';
 
-// Curated Austin Places matching the user's map image
-const MAP_LOCATIONS = [
-  {
-    id: 'texas-capitol',
-    name: 'Texas Capitol',
-    category: 'landmark',
-    icon: '🏛️',
-    district: 'Downtown',
-    lat: 30.2747,
-    lng: -97.7404,
-    address: '1100 Congress Ave, Austin, TX 78701',
-    description: 'Iconic sunset red granite state capitol building with lush green grounds.',
-  },
-  {
-    id: '99-ranch-market',
-    name: '99 Ranch Market',
-    category: 'market',
-    icon: '🛒',
-    district: 'North Austin / Mueller',
-    lat: 30.3524,
-    lng: -97.7136,
-    address: '6929 Airport Blvd, Austin, TX 78752',
-    description: 'Premier Asian supermarket and food hall in North Austin.',
-  },
-  {
-    id: 'broken-spoke',
-    name: 'Broken Spoke',
-    category: 'music',
-    icon: '🎵',
-    district: 'South Austin',
-    lat: 30.2407,
-    lng: -97.7854,
-    address: '3201 S Lamar Blvd, Austin, TX 78704',
-    description: 'Legendary Texas dance hall featuring live country music and two-stepping.',
-  },
-  {
-    id: 'barton-springs-pool',
-    name: 'Barton Springs Pool (Court Mode)',
-    category: 'court',
-    icon: '<img src="/assets/raw/landmark_court_0.png" class="cartoon-marker-img" />',
-    district: 'West Austin / Zilker',
-    lat: 30.2638,
-    lng: -97.7713,
-    address: '2201 Barton Springs Rd, Austin, TX 78704',
-    description: 'Spring-fed 68°F natural pool surrounded by Zilker Park lawns.',
-  },
-  {
-    id: 'austin-hindu-temple',
-    name: 'Austin Hindu Temple',
-    category: 'landmark',
-    icon: '🛕',
-    district: 'East Austin',
-    lat: 30.2842,
-    lng: -97.5855,
-    address: '9801 Decker Ln, Austin, TX 78724',
-    description: 'Vibrant cultural and community center in East Austin.',
-  },
-  {
-    id: 'austin-bergstrom-airport',
-    name: 'Austin-Bergstrom Int. Airport',
-    category: 'travel',
-    icon: '✈️',
-    district: 'South Austin',
-    lat: 30.1975,
-    lng: -97.6664,
-    address: '3600 Presidential Blvd, Austin, TX 78719',
-    description: 'Austin’s international airport connection.',
-  },
-  {
-    id: 'dick-nichols-park',
-    name: 'Dick Nichols District Park',
-    category: 'court',
-    icon: '<img src="/assets/raw/landmark_court_1.png" class="cartoon-marker-img" />',
-    district: 'South Austin',
-    lat: 30.2078,
-    lng: -97.8545,
-    address: '8011 Beckett Rd, Austin, TX 78749',
-    description: 'Full basketball courts, tennis courts, and shaded trails.',
-  },
-  {
-    id: 'mueller-lake-park',
-    name: 'Mueller Lake Park Courts',
-    category: 'court',
-    icon: '<img src="/assets/raw/landmark_court_2.png" class="cartoon-marker-img" />',
-    district: 'North Austin / Mueller',
-    lat: 30.2985,
-    lng: -97.7051,
-    address: '4550 Mueller Blvd, Austin, TX 78723',
-    description: 'Browning Hangar, pickleball courts, and scenic lake loop.',
-  },
-  {
-    id: 'pease-park',
-    name: 'Pease Park Volleyball',
-    category: 'court',
-    icon: '<img src="/assets/raw/landmark_court_3.png" class="cartoon-marker-img" />',
-    district: 'West Austin / Zilker',
-    lat: 30.2825,
-    lng: -97.7523,
-    address: '1100 Kingsbury St, Austin, TX 78703',
-    description: 'Volleyball courts, basketball, and shaded Shoal Creek greenway.',
-  },
-  {
-    id: 'costco-wholesale-south',
-    name: 'Costco Wholesale',
-    category: 'market',
-    icon: '🛍️',
-    district: 'South Austin',
-    lat: 30.2225,
-    lng: -97.8285,
-    address: '4301 W William Cannon Dr, Austin, TX 78749',
-    description: 'South Austin wholesale shopping hub.',
-  },
-];
+import { AUSTIN_COURTS_DATA } from '../data/courtsMeta';
+
+const getCartoonZone = (district) => {
+  if (['downtown'].includes(district)) return 'Downtown';
+  if (['south', 'south-congress'].includes(district)) return 'South Austin';
+  if (['east', 'cherrywood', 'cesar-chavez'].includes(district)) return 'East Austin';
+  if (['north', 'mueller', 'windsor', 'hyde-park'].includes(district)) return 'North Austin / Mueller';
+  if (['wampus', 'tarry', 'zilker', 'river', 'norwood'].includes(district)) return 'West Austin / Zilker';
+  return 'Downtown';
+};
+
+const getCartoonIcon = (courtId) => {
+  const sum = courtId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  const index = sum % 6; // We have landmark_court_0 to 5
+  return `<img src="/assets/raw/landmark_court_${index}.png" class="cartoon-marker-img" />`;
+};
 
 const TILE_LAYERS = {
   esri_gray: {
@@ -146,13 +49,12 @@ const DISTRICT_COLORS = [
 export default function AustinStreetMap({ onPlaceSelect }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const markersRef = useRef([]);
-
+  const layerGroupRef = useRef(null);
   const activeDistrictRef = useRef(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTileLayer, setSelectedTileLayer] = useState('esri_gray');
-  const [currentZoom, setCurrentZoom] = useState(11.5);
+  const [currentZoom, setCurrentZoom] = useState(12);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [aiAnswer, setAiAnswer] = useState('');
@@ -202,7 +104,7 @@ export default function AustinStreetMap({ onPlaceSelect }) {
       // Initialize map centered slightly tighter on Austin
       const map = L.map(mapContainerRef.current, {
         center: [30.2747, -97.7404],
-        zoom: 11.5,
+        zoom: 12,
         zoomControl: false,
       });
       mapInstanceRef.current = map;
@@ -220,8 +122,8 @@ export default function AustinStreetMap({ onPlaceSelect }) {
         setCurrentZoom(map.getZoom());
       });
 
-      // Render place markers
-      renderMarkers(MAP_LOCATIONS);
+      // Initialize empty layer group for courts
+      layerGroupRef.current = L.layerGroup().addTo(map);
 
       // Fetch and Overlay Austin Council Districts as colored cartoon zones
       if (mapInstanceRef.current) {
@@ -249,12 +151,7 @@ export default function AustinStreetMap({ onPlaceSelect }) {
                 activeDistrictRef.current = feature.properties.name;
                 
                 // Reveal markers only for this specific district
-                markersRef.current.forEach(m => {
-                  const el = m.getElement();
-                  if (el) {
-                    el.style.display = (m.placeDistrict === activeDistrictRef.current) ? 'block' : 'none';
-                  }
-                });
+                updateVisibleCourts(activeDistrictRef.current);
               }
             });
           }
@@ -290,45 +187,40 @@ export default function AustinStreetMap({ onPlaceSelect }) {
     }).addTo(map);
   }, [selectedTileLayer]);
 
-  const renderMarkers = (locationsList) => {
-    if (!mapInstanceRef.current || !window.L) return;
+  const updateVisibleCourts = (zoneName) => {
+    if (!mapInstanceRef.current || !window.L || !layerGroupRef.current) return;
     const L = window.L;
-    const map = mapInstanceRef.current;
 
-    // Clear existing markers
-    markersRef.current.forEach((m) => map.removeLayer(m));
-    markersRef.current = [];
+    // Clear existing markers robustly
+    layerGroupRef.current.clearLayers();
 
-    locationsList.forEach((place) => {
-      const customHtml = `
-        <div class="custom-map-marker-pin ${place.category}">
-          <span class="marker-icon">${place.icon}</span>
-          <span class="marker-title">${place.name}</span>
-        </div>
-      `;
+    if (!zoneName) return;
 
-      const customIcon = L.divIcon({
-        className: 'custom-map-marker-container',
-        html: customHtml,
-        iconSize: [120, 36],
-        iconAnchor: [60, 18],
-      });
+    AUSTIN_COURTS_DATA.forEach((court) => {
+      if (getCartoonZone(court.district) === zoneName) {
+        const customHtml = `
+          <div class="custom-map-marker-pin court">
+            <span class="marker-icon">${getCartoonIcon(court.id)}</span>
+            <span class="marker-title">${court.name}</span>
+          </div>
+        `;
 
-      const marker = L.marker([place.lat, place.lng], { icon: customIcon }).addTo(map);
-      marker.placeDistrict = place.district; // Store district info on the marker object
-      
-      // Hide marker by default unless its district is active
-      const el = marker.getElement();
-      if (el) {
-        el.style.display = (activeDistrictRef.current === place.district) ? 'block' : 'none';
+        const customIcon = L.divIcon({
+          className: 'custom-map-marker-container',
+          html: customHtml,
+          iconSize: [120, 36],
+          iconAnchor: [60, 18],
+        });
+
+        const marker = L.marker([court.coords.lat, court.coords.lng], { icon: customIcon });
+
+        marker.on('click', () => {
+          setSelectedPlace(court);
+          if (onPlaceSelect) onPlaceSelect({ id: court.id, category: 'court' });
+        });
+
+        marker.addTo(layerGroupRef.current);
       }
-
-      marker.on('click', () => {
-        setSelectedPlace(place);
-        if (onPlaceSelect) onPlaceSelect(place);
-      });
-
-      markersRef.current.push(marker);
     });
   };
 
@@ -352,12 +244,13 @@ export default function AustinStreetMap({ onPlaceSelect }) {
         setAiAnswer(result.explanation || '');
 
         if (result.matchedIds && result.matchedIds.length > 0) {
-          const filtered = MAP_LOCATIONS.filter((loc) => result.matchedIds.includes(loc.id));
-          renderMarkers(filtered);
-
-          const firstMatch = filtered[0];
-          if (firstMatch && mapInstanceRef.current && window.L) {
-            mapInstanceRef.current.setView([firstMatch.lat, firstMatch.lng], 13, { animate: true });
+          const firstId = result.matchedIds[0];
+          const court = AUSTIN_COURTS_DATA.find(c => c.id === firstId);
+          if (court) {
+             const zone = getCartoonZone(court.district);
+             activeDistrictRef.current = zone;
+             updateVisibleCourts(zone);
+             if (mapInstanceRef.current) mapInstanceRef.current.setView([court.coords.lat, court.coords.lng], 13, { animate: true });
           }
         }
       } catch (err) {
@@ -373,16 +266,15 @@ export default function AustinStreetMap({ onPlaceSelect }) {
 
   const fallbackLocalSearch = () => {
     const q = searchQuery.toLowerCase();
-    const filtered = MAP_LOCATIONS.filter(
-      (loc) =>
-        loc.name.toLowerCase().includes(q) ||
-        loc.district.toLowerCase().includes(q) ||
-        loc.address.toLowerCase().includes(q) ||
-        loc.category.toLowerCase().includes(q)
+    const court = AUSTIN_COURTS_DATA.find((c) =>
+      c.name.toLowerCase().includes(q) ||
+      c.district.toLowerCase().includes(q)
     );
-    renderMarkers(filtered);
-    if (filtered.length > 0 && mapInstanceRef.current) {
-      mapInstanceRef.current.setView([filtered[0].lat, filtered[0].lng], 12, { animate: true });
+    if (court) {
+      const zone = getCartoonZone(court.district);
+      activeDistrictRef.current = zone;
+      updateVisibleCourts(zone);
+      if (mapInstanceRef.current) mapInstanceRef.current.setView([court.coords.lat, court.coords.lng], 13, { animate: true });
     }
   };
 
@@ -510,14 +402,14 @@ export default function AustinStreetMap({ onPlaceSelect }) {
             ✕
           </button>
           <div className="asm-card-header">
-            <span className="asm-card-icon">{selectedPlace.icon}</span>
+            <span className="asm-card-icon" dangerouslySetInnerHTML={{ __html: getCartoonIcon(selectedPlace.id) }}></span>
             <div>
               <h3>{selectedPlace.name}</h3>
-              <span className="asm-card-district">{selectedPlace.district.toUpperCase()}</span>
+              <span className="asm-card-district">{(selectedPlace.district || '').toUpperCase()}</span>
             </div>
           </div>
-          <p className="asm-card-address">📍 {selectedPlace.address}</p>
-          <p className="asm-card-desc">{selectedPlace.description}</p>
+          <p className="asm-card-address">📍 {selectedPlace.address || 'Austin, TX'}</p>
+          <p className="asm-card-desc">{selectedPlace.description || 'Awesome local court.'}</p>
           <div className="asm-card-actions">
             <button
               className="asm-action-btn primary"
