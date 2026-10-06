@@ -3,7 +3,7 @@ import { searchMapWithOpenAI, askAustinAiAssistant, getStoredOpenAIKey } from '.
 import { AUSTIN_DISTRICTS_GEOJSON } from './austinDistricts';
 import './AustinStreetMap.css';
 
-import { AUSTIN_COURTS_DATA } from '../data/courtsMeta';
+import { AUSTIN_COURTS_DATA, SPORT_META } from '../data/courtsMeta';
 
 const getCartoonZone = (district) => {
   if (['downtown'].includes(district)) return 'Downtown';
@@ -50,7 +50,8 @@ export default function AustinStreetMap({ onPlaceSelect }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const layerGroupRef = useRef(null);
-  const activeDistrictRef = useRef(null);
+
+  const [activeDistrictZone, setActiveDistrictZone] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTileLayer, setSelectedTileLayer] = useState('esri_gray');
@@ -148,10 +149,7 @@ export default function AustinStreetMap({ onPlaceSelect }) {
             layer.on('click', (e) => {
               if (mapInstanceRef.current) {
                 mapInstanceRef.current.flyToBounds(e.target.getBounds(), { padding: [50, 50], duration: 0.8 });
-                activeDistrictRef.current = feature.properties.name;
-                
-                // Reveal markers only for this specific district
-                updateVisibleCourts(activeDistrictRef.current);
+                setActiveDistrictZone(feature.properties.name);
               }
             });
           }
@@ -187,6 +185,10 @@ export default function AustinStreetMap({ onPlaceSelect }) {
     }).addTo(map);
   }, [selectedTileLayer]);
 
+  useEffect(() => {
+    updateVisibleCourts(activeDistrictZone);
+  }, [activeDistrictZone]);
+
   const updateVisibleCourts = (zoneName) => {
     if (!mapInstanceRef.current || !window.L || !layerGroupRef.current) return;
     const L = window.L;
@@ -198,18 +200,16 @@ export default function AustinStreetMap({ onPlaceSelect }) {
 
     AUSTIN_COURTS_DATA.forEach((court) => {
       if (getCartoonZone(court.district) === zoneName) {
+        const sportColor = SPORT_META[court.sport[0]]?.color || '#3b82f6';
         const customHtml = `
-          <div class="custom-map-marker-pin court">
-            <span class="marker-icon">${getCartoonIcon(court.id)}</span>
-            <span class="marker-title">${court.name}</span>
-          </div>
+          <div class="asm-dot-marker" style="background-color: ${sportColor}; width: 18px; height: 18px; border-radius: 50%;"></div>
         `;
 
         const customIcon = L.divIcon({
-          className: 'custom-map-marker-container',
+          className: 'asm-dot-marker-container',
           html: customHtml,
-          iconSize: [120, 36],
-          iconAnchor: [60, 18],
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
         });
 
         const marker = L.marker([court.coords.lat, court.coords.lng], { icon: customIcon });
@@ -248,8 +248,7 @@ export default function AustinStreetMap({ onPlaceSelect }) {
           const court = AUSTIN_COURTS_DATA.find(c => c.id === firstId);
           if (court) {
              const zone = getCartoonZone(court.district);
-             activeDistrictRef.current = zone;
-             updateVisibleCourts(zone);
+             setActiveDistrictZone(zone);
              if (mapInstanceRef.current) mapInstanceRef.current.setView([court.coords.lat, court.coords.lng], 13, { animate: true });
           }
         }
@@ -272,8 +271,7 @@ export default function AustinStreetMap({ onPlaceSelect }) {
     );
     if (court) {
       const zone = getCartoonZone(court.district);
-      activeDistrictRef.current = zone;
-      updateVisibleCourts(zone);
+      setActiveDistrictZone(zone);
       if (mapInstanceRef.current) mapInstanceRef.current.setView([court.coords.lat, court.coords.lng], 13, { animate: true });
     }
   };
@@ -392,6 +390,27 @@ export default function AustinStreetMap({ onPlaceSelect }) {
           <button className="asm-ai-close" onClick={() => setAiAnswer('')}>
             ✕
           </button>
+        </div>
+      )}
+
+      {/* Slide-out District Sidebar */}
+      {activeDistrictZone && (
+        <div className="asm-district-sidebar">
+          <div className="asm-sidebar-header">
+            <h2>{activeDistrictZone} Courts</h2>
+            <button onClick={() => { setActiveDistrictZone(null); setSelectedPlace(null); }}>✕</button>
+          </div>
+          <div className="asm-sidebar-list">
+            {AUSTIN_COURTS_DATA.filter(c => getCartoonZone(c.district) === activeDistrictZone).map(court => (
+              <div key={court.id} className="asm-sidebar-item" onClick={() => setSelectedPlace(court)}>
+                <span className="asm-item-icon" dangerouslySetInnerHTML={{ __html: getCartoonIcon(court.id) }}></span>
+                <div className="asm-item-info">
+                  <h4>{court.name}</h4>
+                  <span>{court.sport.map(s => SPORT_META[s]?.label || s).join(' · ')}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
