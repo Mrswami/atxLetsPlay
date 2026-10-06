@@ -348,3 +348,7 @@
 
 .district-label-tooltip { background: transparent; border: none; box-shadow: none; pointer-events: none; }
 
+
+.zoomed-in .district-label-tooltip { opacity: 0 !important; transition: opacity 0.3s; }
+.cartoon-marker-img { width: 48px; height: 48px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); object-fit: cover; }
+

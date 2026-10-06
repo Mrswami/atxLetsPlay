@@ -10,7 +10,7 @@ const MAP_LOCATIONS = [
     name: 'Texas Capitol',
     category: 'landmark',
     icon: '🏛️',
-    district: 'downtown',
+    district: 'Downtown',
     lat: 30.2747,
     lng: -97.7404,
     address: '1100 Congress Ave, Austin, TX 78701',
@@ -21,7 +21,7 @@ const MAP_LOCATIONS = [
     name: '99 Ranch Market',
     category: 'market',
     icon: '🛒',
-    district: 'north',
+    district: 'North Austin / Mueller',
     lat: 30.3524,
     lng: -97.7136,
     address: '6929 Airport Blvd, Austin, TX 78752',
@@ -32,7 +32,7 @@ const MAP_LOCATIONS = [
     name: 'Broken Spoke',
     category: 'music',
     icon: '🎵',
-    district: 'south-lamar',
+    district: 'South Austin',
     lat: 30.2407,
     lng: -97.7854,
     address: '3201 S Lamar Blvd, Austin, TX 78704',
@@ -40,10 +40,10 @@ const MAP_LOCATIONS = [
   },
   {
     id: 'barton-springs-pool',
-    name: 'Barton Springs Pool',
-    category: 'park',
-    icon: '🏊‍♂️',
-    district: 'zilker',
+    name: 'Barton Springs Pool (Court Mode)',
+    category: 'court',
+    icon: '<img src="/assets/raw/landmark_court_0.png" class="cartoon-marker-img" />',
+    district: 'West Austin / Zilker',
     lat: 30.2638,
     lng: -97.7713,
     address: '2201 Barton Springs Rd, Austin, TX 78704',
@@ -54,7 +54,7 @@ const MAP_LOCATIONS = [
     name: 'Austin Hindu Temple',
     category: 'landmark',
     icon: '🛕',
-    district: 'east',
+    district: 'East Austin',
     lat: 30.2842,
     lng: -97.5855,
     address: '9801 Decker Ln, Austin, TX 78724',
@@ -65,7 +65,7 @@ const MAP_LOCATIONS = [
     name: 'Austin-Bergstrom Int. Airport',
     category: 'travel',
     icon: '✈️',
-    district: 'southeast',
+    district: 'South Austin',
     lat: 30.1975,
     lng: -97.6664,
     address: '3600 Presidential Blvd, Austin, TX 78719',
@@ -75,8 +75,8 @@ const MAP_LOCATIONS = [
     id: 'dick-nichols-park',
     name: 'Dick Nichols District Park',
     category: 'court',
-    icon: '🏀',
-    district: 'south',
+    icon: '<img src="/assets/raw/landmark_court_1.png" class="cartoon-marker-img" />',
+    district: 'South Austin',
     lat: 30.2078,
     lng: -97.8545,
     address: '8011 Beckett Rd, Austin, TX 78749',
@@ -84,10 +84,10 @@ const MAP_LOCATIONS = [
   },
   {
     id: 'mueller-lake-park',
-    name: 'Mueller Lake Park',
+    name: 'Mueller Lake Park Courts',
     category: 'court',
-    icon: '🏓',
-    district: 'mueller',
+    icon: '<img src="/assets/raw/landmark_court_2.png" class="cartoon-marker-img" />',
+    district: 'North Austin / Mueller',
     lat: 30.2985,
     lng: -97.7051,
     address: '4550 Mueller Blvd, Austin, TX 78723',
@@ -95,10 +95,10 @@ const MAP_LOCATIONS = [
   },
   {
     id: 'pease-park',
-    name: 'Pease Park & Shoal Creek',
-    category: 'park',
-    icon: '🌳',
-    district: 'hyde-park',
+    name: 'Pease Park Volleyball',
+    category: 'court',
+    icon: '<img src="/assets/raw/landmark_court_3.png" class="cartoon-marker-img" />',
+    district: 'West Austin / Zilker',
     lat: 30.2825,
     lng: -97.7523,
     address: '1100 Kingsbury St, Austin, TX 78703',
@@ -109,7 +109,7 @@ const MAP_LOCATIONS = [
     name: 'Costco Wholesale',
     category: 'market',
     icon: '🛍️',
-    district: 'south',
+    district: 'South Austin',
     lat: 30.2225,
     lng: -97.8285,
     address: '4301 W William Cannon Dr, Austin, TX 78749',
@@ -148,9 +148,11 @@ export default function AustinStreetMap({ onPlaceSelect }) {
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
 
+  const activeDistrictRef = useRef(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTileLayer, setSelectedTileLayer] = useState('esri_gray');
-  const [currentZoom, setCurrentZoom] = useState(11);
+  const [currentZoom, setCurrentZoom] = useState(11.5);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [aiAnswer, setAiAnswer] = useState('');
@@ -197,10 +199,10 @@ export default function AustinStreetMap({ onPlaceSelect }) {
         mapInstanceRef.current = null;
       }
 
-      // Initialize map centered at Austin Capitol
+      // Initialize map centered slightly tighter on Austin
       const map = L.map(mapContainerRef.current, {
         center: [30.2747, -97.7404],
-        zoom: 11,
+        zoom: 11.5,
         zoomControl: false,
       });
       mapInstanceRef.current = map;
@@ -244,6 +246,15 @@ export default function AustinStreetMap({ onPlaceSelect }) {
             layer.on('click', (e) => {
               if (mapInstanceRef.current) {
                 mapInstanceRef.current.flyToBounds(e.target.getBounds(), { padding: [50, 50], duration: 0.8 });
+                activeDistrictRef.current = feature.properties.name;
+                
+                // Reveal markers only for this specific district
+                markersRef.current.forEach(m => {
+                  const el = m.getElement();
+                  if (el) {
+                    el.style.display = (m.placeDistrict === activeDistrictRef.current) ? 'block' : 'none';
+                  }
+                });
               }
             });
           }
@@ -304,6 +315,13 @@ export default function AustinStreetMap({ onPlaceSelect }) {
       });
 
       const marker = L.marker([place.lat, place.lng], { icon: customIcon }).addTo(map);
+      marker.placeDistrict = place.district; // Store district info on the marker object
+      
+      // Hide marker by default unless its district is active
+      const el = marker.getElement();
+      if (el) {
+        el.style.display = (activeDistrictRef.current === place.district) ? 'block' : 'none';
+      }
 
       marker.on('click', () => {
         setSelectedPlace(place);
@@ -392,7 +410,7 @@ export default function AustinStreetMap({ onPlaceSelect }) {
   };
 
   return (
-    <div className="austin-street-map-view">
+    <div className={`austin-street-map-view ${currentZoom >= 12.5 ? 'zoomed-in' : ''}`}>
       {/* 🔍 Search location bar matching top-left UI */}
       <div className="asm-top-bar">
         <form className="asm-search-box" onSubmit={handleSearch}>
