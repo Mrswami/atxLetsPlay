@@ -345,3 +345,6 @@
 .asm-action-btn.primary:hover {
   background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
 }
+
+.district-label-tooltip { background: transparent; border: none; box-shadow: none; pointer-events: none; }
+

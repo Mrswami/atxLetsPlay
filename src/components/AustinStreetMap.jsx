@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { searchMapWithOpenAI, askAustinAiAssistant, getStoredOpenAIKey } from '../services/openaiService';
+import { AUSTIN_DISTRICTS_GEOJSON } from './austinDistricts';
 import './AustinStreetMap.css';
 
 // Curated Austin Places matching the user's map image
@@ -221,26 +222,33 @@ export default function AustinStreetMap({ onPlaceSelect }) {
       renderMarkers(MAP_LOCATIONS);
 
       // Fetch and Overlay Austin Council Districts as colored cartoon zones
-      fetch('https://data.austintexas.gov/resource/k9zd-e4ta.geojson')
-        .then((res) => res.json())
-        .then((geoData) => {
-          if (!mapInstanceRef.current) return;
-          L.geoJSON(geoData, {
-            style: (feature) => {
-              // Assign a vibrant color to each district
-              const distNum = feature.properties.council_district || 1;
-              const color = DISTRICT_COLORS[(distNum - 1) % DISTRICT_COLORS.length];
-              return {
-                color: '#ffffff', // Clean white borders
-                weight: 2,
-                fillColor: color,
-                fillOpacity: 0.15, // Subtle tint over the map
-                dashArray: '5',
-              };
-            },
-          }).addTo(mapInstanceRef.current);
-        })
-        .catch((err) => console.log('Failed to load district bounds:', err));
+      if (mapInstanceRef.current) {
+        L.geoJSON(AUSTIN_DISTRICTS_GEOJSON, {
+          style: (feature) => {
+            return {
+              color: '#ffffff', // Clean white borders
+              weight: 3,
+              fillColor: feature.properties.color,
+              fillOpacity: 0.25, // Stronger tint for cartoon look
+              dashArray: '8',
+            };
+          },
+          onEachFeature: (feature, layer) => {
+            // Add a permanent cartoon label to the district center
+            layer.bindTooltip(
+              `<div style="font-weight:900;font-size:16px;color:${feature.properties.color};text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff;font-family:'Fredoka',sans-serif;">${feature.properties.name}</div>`,
+              { permanent: true, direction: 'center', className: 'district-label-tooltip' }
+            );
+            
+            // On Click: Zoom map to fit this specific area and its courts
+            layer.on('click', (e) => {
+              if (mapInstanceRef.current) {
+                mapInstanceRef.current.flyToBounds(e.target.getBounds(), { padding: [50, 50], duration: 0.8 });
+              }
+            });
+          }
+        }).addTo(mapInstanceRef.current);
+      }
     }
 
     initLeafletMap();
