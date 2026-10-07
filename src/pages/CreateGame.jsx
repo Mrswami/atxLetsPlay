@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCourt } from '../hooks/useCourts';
 import { db } from '../firebase/config';
-import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, Timestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { SPORT_META } from '../data/courtsMeta';
 import Loading from '../components/Loading';
 import './CreateGame.css';
@@ -26,6 +26,8 @@ export default function CreateGame() {
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [gamesMadeCount, setGamesMadeCount] = useState(1);
 
   // Set default sport when court loads
   useEffect(() => {
@@ -66,8 +68,29 @@ export default function CreateGame() {
         throw new Error('Please enter a valid scheduled date and time.');
       }
 
-      if (dateObj.getTime() < Date.now()) {
+      if (dateObj.getTime() < Date.now() - 10 * 60000) {
         throw new Error('Scheduled time cannot be in the past.');
+      }
+
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      let newCount = 1;
+      
+      if (userSnap.exists()) {
+        const uData = userSnap.data();
+        const lastDate = uData.lastGameCreatedAt?.toDate();
+        const today = new Date();
+        const isSameDay = lastDate && 
+                          lastDate.getDate() === today.getDate() && 
+                          lastDate.getMonth() === today.getMonth() && 
+                          lastDate.getFullYear() === today.getFullYear();
+                          
+        if (isSameDay) {
+          if (uData.gamesCreatedToday >= 5) {
+            throw new Error('You have reached the limit of 5 games created per day.');
+          }
+          newCount = uData.gamesCreatedToday + 1;
+        }
       }
 
       const gameData = {
@@ -81,14 +104,24 @@ export default function CreateGame() {
         status: 'open',
         scheduledTime: Timestamp.fromDate(dateObj),
         maxPlayers: parsedMax,
-        currentPlayers: [user.uid], // Creator is automatically added to game
+        currentPlayers: [user.uid],
         skillLevel,
         notes: notes.trim(),
         createdAt: serverTimestamp(),
       };
 
       await addDoc(collection(db, 'games'), gameData);
-      navigate(`/court/${courtId}`, { state: { fromCreate: true } });
+      
+      await updateDoc(userRef, {
+        gamesCreatedToday: newCount,
+        lastGameCreatedAt: serverTimestamp()
+      });
+
+      setGamesMadeCount(newCount);
+      setShowSuccessPopup(true);
+      setTimeout(() => {
+        navigate(`/court/${courtId}`, { state: { fromCreate: true } });
+      }, 2500);
     } catch (err) {
       setError(err.message || 'Failed to create game. Please try again.');
     } finally {
@@ -98,6 +131,17 @@ export default function CreateGame() {
 
   return (
     <div className="create-game-page">
+      {showSuccessPopup && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '16px', textAlign: 'center', color: '#fff', border: '2px solid #10b981', boxShadow: '0 0 20px rgba(16,185,129,0.3)', maxWidth: '90%', animation: 'popIn 0.3s ease-out' }}>
+             <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎉 Success!</h2>
+             <p style={{ fontSize: '1.2rem', color: '#94a3b8' }}>Game posted!</p>
+             <div style={{ marginTop: '1rem', background: 'rgba(16,185,129,0.1)', padding: '0.5rem 1rem', borderRadius: '8px', color: '#10b981', fontWeight: 'bold' }}>
+               Game made/joined ({gamesMadeCount}/5)
+             </div>
+          </div>
+        </div>
+      )}
       <header className="cg-header">
         <button className="cg-back-btn" onClick={() => navigate(-1)} aria-label="Cancel">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
