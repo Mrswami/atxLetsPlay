@@ -146,6 +146,7 @@ export default function CreateGame() {
               min={formatForInput(new Date())}
               max={formatForInput(new Date(new Date().setMonth(new Date().getMonth() + 3)))}
               onChange={(e) => setScheduledTime(e.target.value)}
+              onClick={(e) => { if (e.target.showPicker) e.target.showPicker(); }}
               required
             />
           </div>
