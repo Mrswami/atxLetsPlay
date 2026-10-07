@@ -55,7 +55,7 @@ export default function CourtDetail() {
   }
 
   const primarySport = court.sport?.[0];
-  const meta = SPORT_META[primarySport];
+  
   const districtName = court.district?.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
   return (
@@ -135,14 +135,16 @@ export default function CourtDetail() {
                   <InfoItem icon="🔢" label="Courts" value={`${court.courtCount} courts (Tap to view)`} />
                   {showSubCourts && (
                     <div className="cd-subcourts-dropdown" style={{padding: '0 16px 16px 48px', color: 'var(--text-secondary)', fontSize: '0.9rem'}}>
-                      {Array.from({length: court.courtCount}).map((_, i) => (
-                        <div key={i} style={{marginBottom: '4px'}}>
-                          • Court {i+1} 
-                          <span style={{opacity: 0.7, marginLeft: '8px', fontSize: '0.8rem'}}>
-                            {court.sport.map(s => SPORT_META[s]?.label || s).join(' / ')}
-                          </span>
-                        </div>
-                      ))}
+                      <div style={{marginBottom: '8px', opacity: 0.7, fontSize: '0.85rem'}}>
+                        {court.sport.map(s => SPORT_META[s]?.label || s).join(' / ')}
+                      </div>
+                      <div style={{display: 'flex', flexWrap: 'wrap', gap: '6px'}}>
+                        {Array.from({length: court.courtCount}).map((_, i) => (
+                          <div key={i} style={{background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '4px'}}>
+                            Court {i+1}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

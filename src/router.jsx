@@ -14,12 +14,15 @@ import Onboarding from './pages/Onboarding';
 import Loading from './components/Loading';
 
 function ProtectedRoute({ children }) {
-  const { user, loading, isGuest } = useAuth();
+  const { user, userProfile, loading, isGuest } = useAuth();
   const location = useLocation();
   if (loading) return <Loading />;
   if (!user && !isGuest) {
     const dest = location.pathname + location.search;
     return <Navigate to={`/login?redirectTo=${encodeURIComponent(dest)}`} replace state={{ redirectTo: dest }} />;
+  }
+  if (userProfile && userProfile.hasCompletedOnboarding === false && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
   }
   return children;
 }

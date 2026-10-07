@@ -208,6 +208,7 @@ export function AuthProvider({ children }) {
       district: '',
       xp: 0,
       gamesPlayed: 0,
+      hasCompletedOnboarding: false,
       createdAt: serverTimestamp(),
     });
     setIsGuest(false);
@@ -260,6 +261,7 @@ export function AuthProvider({ children }) {
         district: oldProfile?.district || '',
         xp: oldProfile?.xp || 0,
         gamesPlayed: oldProfile?.gamesPlayed || 0,
+        hasCompletedOnboarding: false,
         createdAt: serverTimestamp(),
       });
     } else if (isUpgradingGuest && oldProfile && profileSnap.exists()) {

@@ -4,20 +4,19 @@ import { useAuth } from '../contexts/AuthContext';
 import { SPORT_META, DISTRICT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
 import './Settings.css';
 
-// Curated Austin Sports Avatar Presets using SVG Data URIs
+// Curated Austin Sports Avatar Presets
 const PRESET_AVATARS = [
-  { id: 'hoops', label: 'Baller', emoji: '🏀', color: '#f97316' },
-  { id: 'tennis', label: 'Ace', emoji: '🎾', color: '#eab308' },
-  { id: 'pickle', label: 'Dink Pro', emoji: '🏓', color: '#06b6d4' },
-  { id: 'soccer', label: 'Striker', emoji: '⚽', color: '#22d366' },
-  { id: 'spiker', label: 'Spiker', emoji: '🏐', color: '#8b5cf6' },
-  { id: 'disc', label: 'Disc Ace', emoji: '🥏', color: '#10b981' },
-  { id: 'batcity', label: 'Bat City', emoji: '🦇', color: '#6366f1' },
-  { id: 'tacotruck', label: 'Taco & Run', emoji: '🌮', color: '#f59e0b' },
-  { id: 'dynamo', label: 'Dynamo', emoji: '⚡', color: '#38bdf8' },
-  { id: 'cowboy', label: 'Lone Star', emoji: '🤠', color: '#ec4899' },
-  { id: 'champ', label: 'Champion', emoji: '🏆', color: '#eab308' },
-  { id: 'fire', label: 'On Fire', emoji: '🔥', color: '#ef4444' },
+  { id: 'teen1', label: 'Skater', src: '/assets/characters_v1/preset_teen_jake.jpg' },
+  { id: 'teen2', label: 'Punk', src: '/assets/characters_v1/preset_teen_chloe.jpg' },
+  { id: 'ya1', label: 'Techie', src: '/assets/characters_v1/preset_ya_samir.jpg' },
+  { id: 'ya2', label: 'Barista', src: '/assets/characters_v1/preset_ya_maya.jpg' },
+  { id: 'ya3', label: 'Cyberpunk', src: '/assets/characters_v1/preset_ya_alex.jpg' },
+  { id: 'adult1', label: 'Coach', src: '/assets/characters_v1/preset_adult_ken.jpg' },
+  { id: 'adult2', label: 'Artist', src: '/assets/characters_v1/preset_adult_rosa.jpg' },
+  { id: 'adult3', label: 'Builder', src: '/assets/characters_v1/preset_adult_amir.jpg' },
+  { id: 'elder1', label: 'Fashionista', src: '/assets/characters_v1/preset_elder_eleanor.jpg' },
+  { id: 'elder2', label: 'Ranger', src: '/assets/characters_v1/preset_elder_john.jpg' },
+  { id: 'elder3', label: 'Athlete', src: '/assets/characters_v1/preset_elder_marcus.jpg' },
 ];
 
 function generateEmojiAvatarUri(emoji, bgColor = '#1a2236') {
@@ -754,13 +753,17 @@ export default function Settings() {
                       type="button"
                       className="preset-avatar-btn"
                       onClick={() => {
-                        const uri = generateEmojiAvatarUri(preset.emoji, preset.color);
+                        const uri = preset.src ? preset.src : generateEmojiAvatarUri(preset.emoji, preset.color);
                         setAvatarUrl(uri);
                         setShowPresetPicker(false);
                         triggerToast(`Applied ${preset.label} avatar!`);
                       }}
                     >
-                      <span className="preset-emoji">{preset.emoji}</span>
+                      {preset.src ? (
+                        <img src={preset.src} alt={preset.label} className="preset-img" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)' }} />
+                      ) : (
+                        <span className="preset-emoji">{preset.emoji}</span>
+                      )}
                       <span className="preset-title">{preset.label}</span>
                     </button>
                   ))}

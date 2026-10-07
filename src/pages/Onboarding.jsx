@@ -16,9 +16,10 @@ const PLAY_STYLES = [
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, updateUsername } = useAuth();
 
   const [step, setStep] = useState(1);
+  const [username, setUsername] = useState('');
   const [playStyle, setPlayStyle] = useState('chill');
   const [avatarPhoto, setAvatarPhoto] = useState(null); // base64 string
   const [selectedSports, setSelectedSports] = useState([]);
@@ -126,6 +127,16 @@ export default function Onboarding() {
 
     setSubmitting(true);
     setError('');
+
+    if (username) {
+      try {
+        await updateUsername(username);
+      } catch (unameErr) {
+        setError(unameErr.message || 'Failed to set username.');
+        setSubmitting(false);
+        return;
+      }
+    }
 
     try {
       let finalAvatarUrl = '';
@@ -236,10 +247,22 @@ export default function Onboarding() {
               )}
             </div>
 
+            <h3 className="ob-section-title">Pick a Unique Username</h3>
+            <div className="ob-photo-container" style={{marginBottom: '20px'}}>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                placeholder="e.g. atx_baller"
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '1.1rem' }}
+              />
+            </div>
+
             <div className="ob-actions-row">
               <button
                 type="button"
                 className="ob-next-btn"
+                disabled={!username.trim()}
                 onClick={() => setStep(2)}
               >
                 Next Step: Choose Sports
