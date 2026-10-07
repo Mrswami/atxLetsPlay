@@ -22,7 +22,7 @@
 *   **Deep Linking:** 1-click routing from a feed item directly to the respective Court Detail page.
 
 ### 4. Game Quotas & Lifecycle Limits
-*   **Anti-Spam Quota:** Implemented a hard limit preventing users from hosting more than **5 active pickup games** simultaneously.
+*   **Anti-Spam Quota:** Implemented robust hosting caps to protect community health and prevent spam, restricting users to a maximum of 2 simultaneous live games and no more than 5 scheduled games per day (regardless of overlap).
 *   **Future Lifecycle Roadmap:** Planned auto-expiration logic (games expire 2 hours post-start) to dynamically manage quotas and clear out "zombie" games.
 
 ### 5. Profile & Settings Engineering
