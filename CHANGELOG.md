@@ -16,3 +16,8 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 - **Map Controls**: Removed manual zoom controls (`+ / -`) on the main street map view for a cleaner interface.
+
+### UX Improvements
+- **Username Auto-Check**: The username field now checks availability automatically as you type.
+- **Username Confirmation**: A 'Confirm & Save' button appears only when a username is confirmed available to prevent accidental typos.
+- **Auto-Save Profile**: All profile fields now auto-save implicitly on blur or toggle, removing the need for manual Save buttons.
