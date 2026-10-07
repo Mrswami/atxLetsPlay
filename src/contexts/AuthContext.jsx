@@ -17,7 +17,7 @@ import {
   linkWithPopup,
   EmailAuthProvider,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, deleteDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, getDoc, deleteDoc, serverTimestamp, onSnapshot, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 
 const AuthContext = createContext(null);
@@ -273,6 +273,54 @@ export function AuthProvider({ children }) {
     return cred.user;
   }
 
+  async function updateUsername(newUsername) {
+    if (!user || isGuest || !auth.currentUser) {
+      throw new Error("Must be logged in to set a username.");
+    }
+    const currentUsername = userProfile?.username;
+    if (newUsername === currentUsername) return; // No change
+
+    try {
+      const batch = writeBatch(db);
+      
+      // 1. Create new username document
+      const newUsernameRef = doc(db, 'usernames', newUsername);
+      // We must check if it exists first because our rules might not prevent overwriting if we somehow bypassed it, 
+      // but actually create rules prevent overwriting an existing doc if it belongs to someone else.
+      batch.set(newUsernameRef, { uid: user.uid });
+
+      // 2. Delete old username document if exists
+      if (currentUsername) {
+        const oldUsernameRef = doc(db, 'usernames', currentUsername);
+        batch.delete(oldUsernameRef);
+      }
+
+      // 3. Update user profile
+      const profileRef = doc(db, 'users', user.uid);
+      batch.update(profileRef, {
+        username: newUsername,
+        lastUsernameChange: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      await batch.commit();
+
+      // Update local state
+      setUserProfile((prev) => ({ 
+        ...(prev || {}), 
+        username: newUsername,
+        // We'll approximate the timestamp locally to avoid needing to re-fetch immediately
+        lastUsernameChange: { toMillis: () => Date.now() } 
+      }));
+    } catch (err) {
+      console.error("Failed to update username:", err);
+      if (err.code === 'permission-denied') {
+        throw new Error("Username is taken, or you changed it too recently (14-day limit).");
+      }
+      throw err;
+    }
+  }
+
   async function updateUserProfile(updates) {
     // Optimistic local state update
     setUserProfile((prev) => ({ ...(prev || {}), ...updates }));
@@ -380,6 +428,7 @@ export function AuthProvider({ children }) {
     sendMagicLink,
     continueAsGuest,
     updateUserProfile,
+    updateUsername,
     changePassword,
     deleteUserAccount,
     linkGuestAccount,

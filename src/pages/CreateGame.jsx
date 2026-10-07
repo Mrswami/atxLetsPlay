@@ -18,6 +18,7 @@ export default function CreateGame() {
   const [scheduledTime, setScheduledTime] = useState('');
   const [maxPlayers, setMaxPlayers] = useState('10');
   const [skillLevel, setSkillLevel] = useState('casual');
+  const [subCourt, setSubCourt] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -68,6 +69,7 @@ export default function CreateGame() {
       const gameData = {
         courtId,
         courtName: court.name,
+        subCourt: court.courtCount > 1 ? subCourt : '',
         district: court.district,
         sport,
         createdBy: user.uid,
@@ -141,6 +143,26 @@ export default function CreateGame() {
               required
             />
           </div>
+
+          {/* Sub-Court Selection */}
+          {court.courtCount > 1 && (
+            <div className="form-group">
+              <label htmlFor="cg-subcourt">Which Court? *</label>
+              <select
+                id="cg-subcourt"
+                value={subCourt}
+                onChange={(e) => setSubCourt(e.target.value)}
+                required
+              >
+                <option value="">Select a specific court</option>
+                {Array.from({length: court.courtCount}).map((_, i) => (
+                  <option key={i} value={`Court ${i+1}`}>
+                    Court {i+1}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Max Players */}
           <div className="form-group">

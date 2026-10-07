@@ -392,23 +392,30 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
 
       {/* Slide-out District Sidebar */}
       {activeDistrictZone && (
-        <div className="asm-district-sidebar">
-          <div className="asm-sidebar-header">
-            <h2>{activeDistrictZone} Courts</h2>
-            <button onClick={() => setActiveDistrictZone(null)}>✕</button>
-          </div>
-          <div className="asm-sidebar-list">
-            {AUSTIN_COURTS_DATA.filter(c => getCartoonZone(c.district) === activeDistrictZone).map(court => (
-              <div key={court.id} className="asm-sidebar-item" onClick={() => { if (onPlaceSelect) onPlaceSelect({ id: court.id, category: 'court' }); }}>
-                <span className="asm-item-icon" dangerouslySetInnerHTML={{ __html: getCartoonIcon(court.id) }}></span>
-                <div className="asm-item-info">
-                  <h4>{court.name}</h4>
-                  <span>{court.sport.map(s => SPORT_META[s]?.label || s).join(' · ')}</span>
+        <>
+          <style>{`
+            .view-mode-floating-bar { display: none !important; }
+            .asm-item-icon .cartoon-marker-img { width: 64px !important; height: 64px !important; border-radius: 50%; }
+            .asm-sidebar-header button { font-weight: bold; background: rgba(0,0,0,0.1); padding: 8px 12px; border-radius: 20px; border: none; cursor: pointer; }
+          `}</style>
+          <div className="asm-district-sidebar">
+            <div className="asm-sidebar-header">
+              <h2>{activeDistrictZone} Courts</h2>
+              <button onClick={() => setActiveDistrictZone(null)}>← Back to Map</button>
+            </div>
+            <div className="asm-sidebar-list">
+              {AUSTIN_COURTS_DATA.filter(c => getCartoonZone(c.district) === activeDistrictZone).map(court => (
+                <div key={court.id} className="asm-sidebar-item" onClick={() => { if (onPlaceSelect) onPlaceSelect({ id: court.id, category: 'court' }); }}>
+                  <span className="asm-item-icon" dangerouslySetInnerHTML={{ __html: getCartoonIcon(court.id) }}></span>
+                  <div className="asm-item-info">
+                    <h4>{court.name}</h4>
+                    <span>{court.sport.map(s => SPORT_META[s]?.label || s).join(' · ')}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

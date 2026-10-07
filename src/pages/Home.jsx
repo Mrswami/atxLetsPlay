@@ -231,9 +231,14 @@ export default function Home() {
             <span className="hb-atx">ATX</span>
             <span className="hb-lp">LET'S PLAY</span>
           </span>
-          <div className="header-xp">
-            <span className="xp-bolt">⚡</span>
-            <span className="xp-num">{xp.toLocaleString()} XP</span>
+          <div className="header-actions">
+            <button className="friends-header-btn" onClick={() => navigate('/friends')} aria-label="Friends">
+              👥
+            </button>
+            <div className="header-xp">
+              <span className="xp-bolt">⚡</span>
+              <span className="xp-num">{xp.toLocaleString()} XP</span>
+            </div>
           </div>
         </header>
 

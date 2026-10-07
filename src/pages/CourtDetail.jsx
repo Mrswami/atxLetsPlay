@@ -15,6 +15,7 @@ export default function CourtDetail() {
   const { games, loading: gamesLoading } = useCourtGames(courtId);
   const [viewMode, setViewMode] = useState('info'); // 'info' | '3d' | 'games'
   const [actionError, setActionError] = useState('');
+  const [showSubCourts, setShowSubCourts] = useState(false);
 
   function handleBack() {
     if (location.state?.fromCreate || window.history.length <= 1) {
@@ -127,7 +128,24 @@ export default function CourtDetail() {
               <InfoItem icon="🏢" label="Indoor" value={court.indoor ? 'Yes' : 'Outdoor'} />
               <InfoItem icon="♿" label="Accessible" value={court.accessibility ? 'Yes' : 'Not confirmed'} />
               {court.courtCount > 1 && (
-                <InfoItem icon="🔢" label="Courts" value={`${court.courtCount} courts`} />
+                <div 
+                  onClick={() => setShowSubCourts(!showSubCourts)} 
+                  style={{cursor: 'pointer', background: showSubCourts ? 'rgba(255,255,255,0.05)' : 'transparent', borderRadius: '12px'}}
+                >
+                  <InfoItem icon="🔢" label="Courts" value={`${court.courtCount} courts (Tap to view)`} />
+                  {showSubCourts && (
+                    <div className="cd-subcourts-dropdown" style={{padding: '0 16px 16px 48px', color: 'var(--text-secondary)', fontSize: '0.9rem'}}>
+                      {Array.from({length: court.courtCount}).map((_, i) => (
+                        <div key={i} style={{marginBottom: '4px'}}>
+                          • Court {i+1} 
+                          <span style={{opacity: 0.7, marginLeft: '8px', fontSize: '0.8rem'}}>
+                            {court.sport.map(s => SPORT_META[s]?.label || s).join(' / ')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
@@ -202,24 +220,39 @@ export default function CourtDetail() {
             {/* Active Games */}
             {gamesLoading ? (
               <p className="cd-games-loading">Loading games...</p>
-            ) : games.length === 0 ? (
-              <div className="cd-no-games">
-                <span>🏀</span>
-                <p>No active games right now.</p>
-                <p className="cd-no-games-sub">Be the first to call next!</p>
-              </div>
             ) : (
               <div className="cd-games-list">
                 {actionError && <div className="cd-action-error">{actionError}</div>}
-                <h3 className="cd-section-title">Active Games</h3>
-                {games.map((game) => (
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    userId={user?.uid}
-                    onAction={() => handleGameAction(game)}
-                  />
-                ))}
+                
+                {Array.from({length: court.courtCount || 1}).map((_, i) => {
+                  const subCourtName = court.courtCount > 1 ? `Court ${i+1}` : court.name;
+                  // Filter games for this subcourt. Fallback old games (no subCourt) to Court 1 if there are multiple.
+                  const courtGames = games.filter(g => 
+                    (court.courtCount > 1 && g.subCourt === `Court ${i+1}`) || 
+                    (court.courtCount === 1) ||
+                    (court.courtCount > 1 && !g.subCourt && i === 0)
+                  );
+                  
+                  return (
+                    <div key={i} className="cd-subcourt-section" style={{marginBottom: '24px'}}>
+                      <h3 className="cd-section-title" style={{marginTop: i > 0 ? '16px' : '0'}}>{subCourtName}</h3>
+                      {courtGames.length === 0 ? (
+                        <div className="cd-no-games" style={{padding: '16px', minHeight: 'auto'}}>
+                          <p style={{margin: 0}}>No active games right now. Call Next!</p>
+                        </div>
+                      ) : (
+                        courtGames.map((game) => (
+                          <GameCard
+                            key={game.id}
+                            game={game}
+                            userId={user?.uid}
+                            onAction={() => handleGameAction(game)}
+                          />
+                        ))
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

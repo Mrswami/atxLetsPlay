@@ -8,6 +8,7 @@ import CourtDetail from './pages/CourtDetail';
 import CreateGame from './pages/CreateGame';
 import ActiveGames from './pages/ActiveGames';
 import Profile from './pages/Profile';
+import Friends from './pages/Friends';
 import Leaderboard from './pages/Leaderboard';
 import Onboarding from './pages/Onboarding';
 import Loading from './components/Loading';
@@ -72,6 +73,7 @@ export default function AppRouter() {
         <Route path="/district/:districtId" element={<DistrictCourts />} />
         {/* Court detail — public */}
         <Route path="/court/:courtId" element={<CourtDetail />} />
+        <Route path="/friends" element={<Friends />} />
       </Routes>
     </BrowserRouter>
   );

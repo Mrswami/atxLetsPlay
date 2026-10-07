@@ -54,6 +54,7 @@ export default function Settings() {
     userProfile,
     isGuest,
     updateUserProfile,
+    updateUsername,
     changePassword,
     deleteUserAccount,
     linkGuestAccount,
@@ -64,6 +65,8 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'preferences' | 'notifications' | 'account'
 
   // Profile Form State
+  const [username, setUsername] = useState('');
+  const [usernameError, setUsernameError] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -123,6 +126,7 @@ export default function Settings() {
   // Sync initial state from user / userProfile
   useEffect(() => {
     const profile = userProfile || {};
+    const uUsername = profile.username || '';
     const dName = profile.displayName || user?.displayName || (isGuest ? 'Austin Guest' : 'Player');
     const uBio = profile.bio || '';
     const uAvatar = profile.avatarUrl || user?.photoURL || '';
@@ -137,6 +141,7 @@ export default function Settings() {
     const uOnCourt = profile.onCourtStatus !== undefined ? profile.onCourtStatus : true;
     const uPublic = profile.publicProfile !== undefined ? profile.publicProfile : true;
 
+    setUsername(uUsername);
     setDisplayName(dName);
     setBio(uBio);
     setAvatarUrl(uAvatar);
@@ -152,6 +157,8 @@ export default function Settings() {
     setPublicProfile(uPublic);
 
     setInitialState({
+      username: uUsername,
+      username: uUsername,
       displayName: dName,
       bio: uBio,
       avatarUrl: uAvatar,
@@ -180,6 +187,7 @@ export default function Settings() {
       selectedSports.every((s) => initialState.selectedSports.includes(s));
 
     return (
+      username !== initialState.username ||
       displayName !== initialState.displayName ||
       bio !== initialState.bio ||
       avatarUrl !== initialState.avatarUrl ||
@@ -200,6 +208,7 @@ export default function Settings() {
     );
   }, [
     initialState,
+    username,
     displayName,
     bio,
     avatarUrl,
@@ -389,9 +398,24 @@ export default function Settings() {
 
       await updateUserProfile(updates);
 
+      // Handle username update separately because it uses a batch write for uniqueness and the 14-day rule
+      let finalUsername = initialState?.username || '';
+      if (username.trim() && username.trim() !== initialState?.username) {
+        try {
+          await updateUsername(username.trim());
+          finalUsername = username.trim();
+        } catch (usernameErr) {
+          triggerToast(usernameErr.message, 'error');
+          setUsernameError(usernameErr.message);
+          setSaving(false);
+          return;
+        }
+      }
+
       // Update initial baseline
       setInitialState({
         ...updates,
+        username: finalUsername,
         selectedSports: [...selectedSports],
         sfxEnabled,
         hapticsEnabled,
@@ -750,6 +774,33 @@ export default function Settings() {
             <div className="card-header">
               <h2 className="card-title">Baller Identity</h2>
               <span className="card-badge">Public Profile</span>
+            </div>
+
+            {/* Username */}
+            <div className="form-group">
+              <div className="label-row">
+                <label htmlFor="username">Unique Username</label>
+                <span className="char-count">{username.length}/16</span>
+              </div>
+              <div className="input-with-prefix" style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <span className="input-prefix" style={{ paddingLeft: '1rem', color: '#888', fontWeight: 'bold' }}>@</span>
+                <input
+                  id="username"
+                  type="text"
+                  className="custom-input"
+                  style={{ border: 'none', background: 'transparent', flex: 1, outline: 'none' }}
+                  placeholder="austin_baller"
+                  value={username}
+                  maxLength={16}
+                  onChange={(e) => {
+                    const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                    setUsername(val);
+                    setUsernameError('');
+                  }}
+                />
+              </div>
+              <span className="field-hint">Used for friend requests. Can only be changed once every 14 days.</span>
+              {usernameError && <div className="field-error-msg" style={{color: '#ff4d4f', marginTop: '0.25rem', fontSize: '0.85rem'}}>{usernameError}</div>}
             </div>
 
             {/* Display Name */}
