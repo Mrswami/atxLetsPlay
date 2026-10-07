@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { db } from '../firebase/config';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { SPORT_META, DISTRICT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
 import './Settings.css';
 
@@ -114,6 +116,32 @@ export default function Settings() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState(null);
+
+  async function checkUsernameAvailability() {
+    if (!username.trim()) return;
+    setCheckingUsername(true);
+    setUsernameAvailable(null);
+    setUsernameError('');
+    try {
+      const q = query(collection(db, 'users'), where('username', '==', username.toLowerCase()));
+      const snap = await getDocs(q);
+      const takenByOther = snap.docs.find(d => d.id !== user?.uid);
+      if (takenByOther) {
+        setUsernameError('Username is already taken.');
+        setUsernameAvailable(false);
+      } else {
+        setUsernameAvailable(true);
+        triggerToast('Username is available!');
+      }
+    } catch (err) {
+      setUsernameError('Failed to check availability.');
+    } finally {
+      setCheckingUsername(false);
+    }
+  }
 
   // Saving / Toast state
   const [saving, setSaving] = useState(false);
@@ -592,7 +620,6 @@ export default function Settings() {
         </div>
       </header>
 
-      {/* Navigation Tabs */}
       <nav className="settings-tabs-nav" aria-label="Settings Categories">
         <button
           className={`settings-tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
@@ -602,18 +629,25 @@ export default function Settings() {
           <span className="tab-label">Profile & Identity</span>
         </button>
         <button
-          className={`settings-tab-btn ${activeTab === 'preferences' ? 'active' : ''}`}
-          onClick={() => setActiveTab('preferences')}
-        >
-          <span className="tab-icon">⚙️</span>
-          <span className="tab-label">Preferences</span>
-        </button>
-        <button
           className={`settings-tab-btn ${activeTab === 'notifications' ? 'active' : ''}`}
           onClick={() => setActiveTab('notifications')}
         >
           <span className="tab-icon">🔔</span>
           <span className="tab-label">Alerts & Privacy</span>
+        </button>
+        <button
+          className={`settings-tab-btn ${activeTab === 'friends' ? 'active' : ''}`}
+          onClick={() => setActiveTab('friends')}
+        >
+          <span className="tab-icon">🤝</span>
+          <span className="tab-label">Find Friends</span>
+        </button>
+        <button
+          className={`settings-tab-btn ${activeTab === 'preferences' ? 'active' : ''}`}
+          onClick={() => setActiveTab('preferences')}
+        >
+          <span className="tab-icon">⚙️</span>
+          <span className="tab-label">Preferences</span>
         </button>
         <button
           className={`settings-tab-btn ${activeTab === 'account' ? 'active' : ''}`}
@@ -785,7 +819,7 @@ export default function Settings() {
                 <label htmlFor="username">Unique Username</label>
                 <span className="char-count">{username.length}/16</span>
               </div>
-              <div className="input-with-prefix" style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div className="input-with-prefix" style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                 <span className="input-prefix" style={{ paddingLeft: '1rem', color: '#888', fontWeight: 'bold' }}>@</span>
                 <input
                   id="username"
@@ -799,9 +833,14 @@ export default function Settings() {
                     const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
                     setUsername(val);
                     setUsernameError('');
+                    setUsernameAvailable(null);
                   }}
                 />
+                <button type="button" onClick={checkUsernameAvailability} disabled={checkingUsername || !username} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 1rem', fontWeight: 'bold', cursor: 'pointer', height: '100%', minHeight: '44px' }}>
+                  {checkingUsername ? '...' : 'Check'}
+                </button>
               </div>
+              {usernameAvailable && <div className="field-error-msg" style={{color: '#10b981', marginTop: '0.25rem', fontSize: '0.85rem'}}>Username is available!</div>}
               <span className="field-hint">Used for friend requests. Can only be changed once every 14 days.</span>
               {usernameError && <div className="field-error-msg" style={{color: '#ff4d4f', marginTop: '0.25rem', fontSize: '0.85rem'}}>{usernameError}</div>}
             </div>
@@ -1027,6 +1066,34 @@ export default function Settings() {
               </div>
             </div>
           </section>
+          <div style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end" }}><button type="button" className="save-btn" onClick={handleSaveChanges} disabled={saving} style={{ padding: "0.75rem 2rem", fontSize: "1.1rem", borderRadius: "30px", background: "var(--accent-color, #ff4e00)", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold" }}>{saving ? "Saving..." : "Save Profile Changes"}</button></div>
+        </div>
+      )}
+
+      
+      {activeTab === 'friends' && (
+        <div className="settings-tab-content anim-fade-in">
+          <section className="settings-card">
+            <div className="card-header">
+              <h2 className="card-title">Find Friends</h2>
+              <span className="card-badge">Network</span>
+            </div>
+            <div className="form-group">
+              <label>Search by Unique Username</label>
+              <div className="input-with-prefix" style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', marginTop: '1rem' }}>
+                <span className="input-prefix" style={{ paddingLeft: '1rem', color: '#888', fontWeight: 'bold' }}>@</span>
+                <input
+                  type="text"
+                  className="custom-input"
+                  style={{ border: 'none', background: 'transparent', flex: 1, outline: 'none' }}
+                  placeholder="austin_baller"
+                />
+                <button type="button" style={{ background: '#10b981', color: '#fff', border: 'none', padding: '0 1rem', fontWeight: 'bold', cursor: 'pointer', height: '100%', minHeight: '44px' }}>
+                  Search & Add
+                </button>
+              </div>
+            </div>
+          </section>
         </div>
       )}
 
@@ -1172,6 +1239,7 @@ export default function Settings() {
               </div>
             </div>
           </section>
+          <div style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end" }}><button type="button" className="save-btn" onClick={handleSaveChanges} disabled={saving} style={{ padding: "0.75rem 2rem", fontSize: "1.1rem", borderRadius: "30px", background: "var(--accent-color, #ff4e00)", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold" }}>{saving ? "Saving..." : "Save Preferences"}</button></div>
         </div>
       )}
 
@@ -1253,6 +1321,7 @@ export default function Settings() {
               </label>
             </div>
           </section>
+          <div style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end" }}><button type="button" className="save-btn" onClick={handleSaveChanges} disabled={saving} style={{ padding: "0.75rem 2rem", fontSize: "1.1rem", borderRadius: "30px", background: "var(--accent-color, #ff4e00)", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold" }}>{saving ? "Saving..." : "Save Privacy Settings"}</button></div>
         </div>
       )}
 
@@ -1417,35 +1486,7 @@ export default function Settings() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════
-          STICKY SAVE ACTION BAR (when dirty)
-         ══════════════════════════════════════════ */}
-      {isDirty && (
-        <div className="sticky-save-bar anim-slide-up">
-          <div className="save-bar-info">
-            <span className="save-bar-dot" />
-            <span>Unsaved modifications detected</span>
-          </div>
-          <div className="save-bar-actions">
-            <button
-              type="button"
-              className="discard-btn"
-              onClick={handleResetChanges}
-              disabled={saving}
-            >
-              Discard
-            </button>
-            <button
-              type="button"
-              className="save-btn"
-              onClick={handleSaveChanges}
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </div>
-      )}
+      
 
       {/* ══════════════════════════════════════════
           DELETE CONFIRMATION MODAL

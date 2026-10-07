@@ -21,10 +21,10 @@ const getCartoonIcon = (courtId) => {
 };
 
 const TILE_LAYERS = {
-  esri_gray: {
+  cartodb_voyager: {
     name: '🗺️ Minimal Clean World',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
   },
   google_satellite: {
     name: '🛰️ Real Satellite Imagery',
@@ -54,7 +54,7 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
   const [activeDistrictZone, setActiveDistrictZone] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTileLayer, setSelectedTileLayer] = useState('esri_gray');
+  const [selectedTileLayer, setSelectedTileLayer] = useState('cartodb_voyager');
   const [currentZoom, setCurrentZoom] = useState(12);
   const [isSearching, setIsSearching] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
@@ -358,20 +358,6 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
 
       {/* Map Leaflet Container */}
       <div className="asm-map-container" ref={mapContainerRef} />
-
-      {/* Bottom Left Navigation Controls (+ / - / recenter) */}
-      <div className="asm-controls-panel">
-        <button className="asm-ctrl-btn" onClick={handleRecenter} title="Recenter Capitol">
-          🎯
-        </button>
-        <button className="asm-ctrl-btn" onClick={handleZoomIn} title="Zoom In">
-          +
-        </button>
-        <div className="asm-zoom-level">{currentZoom}</div>
-        <button className="asm-ctrl-btn" onClick={handleZoomOut} title="Zoom Out">
-          −
-        </button>
-      </div>
 
       {/* Layer Switcher (Top Right) */}
       <div className="asm-layer-switcher">
