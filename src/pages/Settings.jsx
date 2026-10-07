@@ -117,31 +117,50 @@ export default function Settings() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
 
+  
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState(null);
 
-  async function checkUsernameAvailability() {
-    if (!username.trim()) return;
-    setCheckingUsername(true);
-    setUsernameAvailable(null);
-    setUsernameError('');
-    try {
-      const q = query(collection(db, 'users'), where('username', '==', username.toLowerCase()));
-      const snap = await getDocs(q);
-      const takenByOther = snap.docs.find(d => d.id !== user?.uid);
-      if (takenByOther) {
-        setUsernameError('Username is already taken.');
-        setUsernameAvailable(false);
-      } else {
-        setUsernameAvailable(true);
-        triggerToast('Username is available!');
-      }
-    } catch (err) {
-      setUsernameError('Failed to check availability.');
-    } finally {
-      setCheckingUsername(false);
+  useEffect(() => {
+    if (!username.trim() || username === initialState?.username) {
+      setUsernameAvailable(null);
+      setUsernameError('');
+      return;
     }
+    const timer = setTimeout(async () => {
+      setCheckingUsername(true);
+      setUsernameAvailable(null);
+      setUsernameError('');
+      try {
+        const q = query(collection(db, 'users'), where('username', '==', username.toLowerCase()));
+        const snap = await getDocs(q);
+        const takenByOther = snap.docs.find(d => d.id !== user?.uid);
+        if (takenByOther) {
+          setUsernameError('Username is already taken.');
+          setUsernameAvailable(false);
+        } else {
+          setUsernameAvailable(true);
+        }
+      } catch (err) {
+        setUsernameError('Failed to check availability.');
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [username, initialState?.username, user?.uid]);
+
+  async function confirmAndSaveUsername() {
+     try {
+       await updateUsername(username.trim());
+       setInitialState(prev => ({ ...prev, username: username.trim() }));
+       setUsernameAvailable(null);
+       triggerToast('Username officially claimed and saved!');
+     } catch (err) {
+       setUsernameError(err.message);
+     }
   }
+
 
   // Saving / Toast state
   const [saving, setSaving] = useState(false);
@@ -819,6 +838,7 @@ export default function Settings() {
                 <label htmlFor="username">Unique Username</label>
                 <span className="char-count">{username.length}/16</span>
               </div>
+              
               <div className="input-with-prefix" style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                 <span className="input-prefix" style={{ paddingLeft: '1rem', color: '#888', fontWeight: 'bold' }}>@</span>
                 <input
@@ -833,14 +853,17 @@ export default function Settings() {
                     const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
                     setUsername(val);
                     setUsernameError('');
-                    setUsernameAvailable(null);
                   }}
                 />
-                <button type="button" onClick={checkUsernameAvailability} disabled={checkingUsername || !username} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 1rem', fontWeight: 'bold', cursor: 'pointer', height: '100%', minHeight: '44px' }}>
-                  {checkingUsername ? '...' : 'Check'}
-                </button>
+                {checkingUsername && <span style={{ padding: '0 1rem', color: '#888' }}>Checking...</span>}
+                {usernameAvailable && (
+                  <button type="button" onClick={confirmAndSaveUsername} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '0 1rem', fontWeight: 'bold', cursor: 'pointer', height: '100%', minHeight: '44px' }}>
+                    Confirm & Save
+                  </button>
+                )}
               </div>
-              {usernameAvailable && <div className="field-error-msg" style={{color: '#10b981', marginTop: '0.25rem', fontSize: '0.85rem'}}>Username is available!</div>}
+              {usernameAvailable && <div className="field-error-msg" style={{color: '#10b981', marginTop: '0.25rem', fontSize: '0.85rem'}}>Username is available! Click Confirm to lock it in.</div>}
+
               <span className="field-hint">Used for friend requests. Can only be changed once every 14 days.</span>
               {usernameError && <div className="field-error-msg" style={{color: '#ff4d4f', marginTop: '0.25rem', fontSize: '0.85rem'}}>{usernameError}</div>}
             </div>
@@ -859,6 +882,7 @@ export default function Settings() {
                 value={displayName}
                 maxLength={24}
                 onChange={(e) => setDisplayName(e.target.value)}
+                onBlur={() => handleSaveChanges()}
               />
               <span className="field-hint">This name appears on the Austin 3D globe, court leaderboards, and pickup lobbies.</span>
             </div>
@@ -877,6 +901,7 @@ export default function Settings() {
                 value={bio}
                 maxLength={140}
                 onChange={(e) => setBio(e.target.value)}
+                onBlur={() => handleSaveChanges()}
               />
             </div>
 
@@ -939,7 +964,7 @@ export default function Settings() {
                     key={lvl.id}
                     type="button"
                     className={`skill-level-card ${skillLevel === lvl.id ? 'active' : ''}`}
-                    onClick={() => setSkillLevel(lvl.id)}
+                    onClick={() => { setSkillLevel(lvl.id); setTimeout(handleSaveChanges, 50); }}
                   >
                     <span className="sl-icon">{lvl.icon}</span>
                     <span className="sl-title">{lvl.label}</span>
@@ -958,7 +983,7 @@ export default function Settings() {
                     key={ps.id}
                     type="button"
                     className={`playstyle-chip ${playStyle === ps.id ? 'active' : ''}`}
-                    onClick={() => setPlayStyle(ps.id)}
+                    onClick={() => { setSkillLevel(lvl.id); setTimeout(handleSaveChanges, 50); }}
                   >
                     <span className="psc-emoji">{ps.emoji}</span>
                     <div className="psc-info">
@@ -1066,7 +1091,7 @@ export default function Settings() {
               </div>
             </div>
           </section>
-          <div style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end" }}><button type="button" className="save-btn" onClick={handleSaveChanges} disabled={saving} style={{ padding: "0.75rem 2rem", fontSize: "1.1rem", borderRadius: "30px", background: "var(--accent-color, #ff4e00)", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold" }}>{saving ? "Saving..." : "Save Profile Changes"}</button></div>
+          
         </div>
       )}
 
@@ -1239,7 +1264,7 @@ export default function Settings() {
               </div>
             </div>
           </section>
-          <div style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end" }}><button type="button" className="save-btn" onClick={handleSaveChanges} disabled={saving} style={{ padding: "0.75rem 2rem", fontSize: "1.1rem", borderRadius: "30px", background: "var(--accent-color, #ff4e00)", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold" }}>{saving ? "Saving..." : "Save Preferences"}</button></div>
+          
         </div>
       )}
 
@@ -1263,7 +1288,7 @@ export default function Settings() {
                 <input
                   type="checkbox"
                   checked={pickupAlerts}
-                  onChange={(e) => setPickupAlerts(e.target.checked)}
+                  onChange={(e) => { (e.target.checked); setTimeout(handleSaveChanges, 50); }}
                 />
                 <span className="toggle-slider" />
               </label>
@@ -1278,7 +1303,7 @@ export default function Settings() {
                 <input
                   type="checkbox"
                   checked={gameInvites}
-                  onChange={(e) => setGameInvites(e.target.checked)}
+                  onChange={(e) => { (e.target.checked); setTimeout(handleSaveChanges, 50); }}
                 />
                 <span className="toggle-slider" />
               </label>
@@ -1300,7 +1325,7 @@ export default function Settings() {
                 <input
                   type="checkbox"
                   checked={onCourtStatus}
-                  onChange={(e) => setOnCourtStatus(e.target.checked)}
+                  onChange={(e) => { (e.target.checked); setTimeout(handleSaveChanges, 50); }}
                 />
                 <span className="toggle-slider" />
               </label>
@@ -1315,13 +1340,13 @@ export default function Settings() {
                 <input
                   type="checkbox"
                   checked={publicProfile}
-                  onChange={(e) => setPublicProfile(e.target.checked)}
+                  onChange={(e) => { (e.target.checked); setTimeout(handleSaveChanges, 50); }}
                 />
                 <span className="toggle-slider" />
               </label>
             </div>
           </section>
-          <div style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end" }}><button type="button" className="save-btn" onClick={handleSaveChanges} disabled={saving} style={{ padding: "0.75rem 2rem", fontSize: "1.1rem", borderRadius: "30px", background: "var(--accent-color, #ff4e00)", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold" }}>{saving ? "Saving..." : "Save Privacy Settings"}</button></div>
+          
         </div>
       )}
 
