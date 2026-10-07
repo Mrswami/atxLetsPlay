@@ -381,6 +381,25 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
                   </div>
                 </div>
               ))}
+              {/* Court Missing Button */}
+              <div style={{ padding: '1rem 0', marginTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+                <button
+                  id="missing-court-btn"
+                  onClick={() => {
+                    const subject = encodeURIComponent(`Missing Court Recommendation - ${activeDistrictZone}`);
+                    const body = encodeURIComponent("Hi Let's Play ATX team,\n\nI'd like to recommend a court that's missing:\n\nCourt name:\nAddress:\nSport(s):\n");
+                    window.location.href = `mailto:hello@letsplayatx.com?subject=${subject}&body=${body}`;
+                  }}
+                  style={{
+                    width: '100%', padding: '1.1rem', background: 'rgba(16,185,129,0.12)',
+                    border: '2px dashed rgba(16,185,129,0.6)', borderRadius: '12px',
+                    color: '#047857', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                  }}
+                >
+                  <span>📍</span> Missing a court? Let us know!
+                </button>
+              </div>
             </div>
           </div>
         </>

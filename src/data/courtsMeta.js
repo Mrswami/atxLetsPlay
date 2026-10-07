@@ -298,7 +298,7 @@ export const AUSTIN_COURTS_DATA = [
   // ── MUELLER ──
   {
     id: 'mueller-browning-hangar',
-    name: 'Browning Hangar PActanque Court',
+    name: 'Browning Hangar Pétanque Court',
     shortName: 'Browning Hangar',
     district: 'mueller',
     sport: ['petanque'],
@@ -311,7 +311,7 @@ export const AUSTIN_COURTS_DATA = [
     amenities: ['restrooms', 'water', 'shade', 'seating'],
     courtCount: 2,
     status: 'active',
-    description: 'Beautifully shaded pActanque courts situated underneath the massive arched wooden architecture of the historic Browning Hangar.',
+    description: 'Beautifully shaded pétanque courts situated underneath the massive arched wooden architecture of the historic Browning Hangar.',
     googleMapsUrl: 'https://maps.google.com/?q=Browning+Hangar+Mueller+Austin+TX',
   },
   {
@@ -332,24 +332,7 @@ export const AUSTIN_COURTS_DATA = [
     description: 'Four full outdoor basketball courts at Mueller Rec Center. Well-maintained with lighting for evening games.',
     googleMapsUrl: 'https://maps.google.com/?q=Mueller+Rec+Center+Austin+TX',
   },
-  {
-    id: 'mueller-petanque',
-    name: 'Mueller Park Pétanque Court',
-    shortName: 'Mueller Pétanque',
-    district: 'mueller',
-    sport: ['petanque'],
-    address: 'Mueller Lake Park, Austin, TX 78723',
-    coords: { lat: 30.2963, lng: -97.7050 },
-    surface: 'gravel',
-    lights: false,
-    indoor: false,
-    accessibility: true,
-    amenities: ['nearby restrooms', 'parking', 'shade trees', 'lake view'],
-    courtCount: 2,
-    status: 'active',
-    description: "Two dedicated pétanque courts at Mueller Lake Park. One of Austin's finest boules venues with a beautiful lake backdrop.",
-    googleMapsUrl: 'https://maps.google.com/?q=Mueller+Lake+Park+Petanque+Austin+TX',
-  },
+  
   {
     id: 'mueller-soccer',
     name: 'Mueller Park Soccer Fields',
