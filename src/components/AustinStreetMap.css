@@ -368,3 +368,42 @@
 .asm-sidebar-item .asm-item-info h4 { margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 700; color: #334155; }
 .asm-sidebar-item .asm-item-info span { font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
+/* Pulsing Avatar Markers */
+.asm-pulsing-avatar-marker {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.asm-pulse-ring {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  border: 3px solid var(--sport-color, #3b82f6);
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.asm-host-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+  z-index: 10;
+  background-color: #1e293b;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  80% { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+

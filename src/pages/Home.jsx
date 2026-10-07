@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import SearchBar from '../components/SearchBar';
 import Avatar from '../components/Avatar';
 import AustinStreetMap from '../components/AustinStreetMap';
-import { useAllActiveGames } from '../hooks/useCourts';
+import { useAllActiveGames, joinGame, leaveGame } from '../hooks/useCourts';
 import { SPORT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -31,6 +31,26 @@ export default function Home() {
       return;
     }
     setShowCourtSelect(true);
+  };
+
+  const handleFeedRSVP = async (e, game) => {
+    e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    const isJoined = game.currentPlayers?.includes(user.uid);
+    try {
+      if (isJoined) {
+        await leaveGame(game.id, user.uid);
+        setToast({ type: 'success', message: 'You left the game.' });
+      } else {
+        await joinGame(game.id, user.uid);
+        setToast({ type: 'success', message: 'You got next! See you on the court.' });
+      }
+    } catch (err) {
+      setToast({ type: 'error', message: err.message || 'Action failed.' });
+    }
   };
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [suggestForm, setSuggestForm] = useState({ name: '', location: '', sport: 'Basketball', notes: '' });
@@ -373,6 +393,7 @@ export default function Home() {
                 const court = AUSTIN_COURTS_DATA.find((c) => c.id === game.courtId);
                 const sm = SPORT_META[game.sport] || SPORT_META['basketball'];
                 const scheduledDate = game.scheduledTime ? new Date(game.scheduledTime) : new Date();
+                const isJoined = user && game.currentPlayers?.includes(user.uid);
                 
                 return (
                   <div key={game.id} className="haf-item" onClick={() => navigate(`/court/${game.courtId}`)}>
@@ -383,9 +404,15 @@ export default function Home() {
                       </p>
                       <span className="haf-time">
                         {scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {game.players && game.players.length > 1 && ` · ${game.players.length} players joined`}
+                        {game.currentPlayers && game.currentPlayers.length > 1 && ` · ${game.currentPlayers.length} players joined`}
                       </span>
                     </div>
+                    <button 
+                      className={`haf-rsvp-btn ${isJoined ? 'leave' : ''}`}
+                      onClick={(e) => handleFeedRSVP(e, game)}
+                    >
+                      {isJoined ? 'LEAVE' : 'I GOT NEXT'}
+                    </button>
                   </div>
                 );
               })

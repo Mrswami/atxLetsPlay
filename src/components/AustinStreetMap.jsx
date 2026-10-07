@@ -46,7 +46,7 @@ const DISTRICT_COLORS = [
   '#6366f1', // Indigo
 ];
 
-export default function AustinStreetMap({ onPlaceSelect }) {
+export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const layerGroupRef = useRef(null);
@@ -184,7 +184,7 @@ export default function AustinStreetMap({ onPlaceSelect }) {
 
   useEffect(() => {
     updateVisibleCourts(activeDistrictZone);
-  }, [activeDistrictZone]);
+  }, [activeDistrictZone, activeGames]);
 
   const updateVisibleCourts = (zoneName) => {
     if (!mapInstanceRef.current || !window.L || !layerGroupRef.current) return;
@@ -198,15 +198,27 @@ export default function AustinStreetMap({ onPlaceSelect }) {
     AUSTIN_COURTS_DATA.forEach((court) => {
       if (getCartoonZone(court.district) === zoneName) {
         const sportColor = SPORT_META[court.sport[0]]?.color || '#3b82f6';
-        const customHtml = `
-          <div class="asm-dot-marker" style="background-color: ${sportColor}; width: 18px; height: 18px; border-radius: 50%;"></div>
-        `;
+        const activeGame = activeGames?.find(g => g.courtId === court.id);
+        
+        let customHtml = '';
+        if (activeGame && activeGame.hostAvatarUrl) {
+           customHtml = `
+             <div class="asm-pulsing-avatar-marker" style="--sport-color: ${sportColor}">
+               <div class="asm-pulse-ring"></div>
+               <img src="${activeGame.hostAvatarUrl}" class="asm-host-avatar" alt="Host" />
+             </div>
+           `;
+        } else {
+           customHtml = `
+             <div class="asm-dot-marker" style="background-color: ${sportColor}; width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.2);"></div>
+           `;
+        }
 
         const customIcon = L.divIcon({
           className: 'asm-dot-marker-container',
           html: customHtml,
-          iconSize: [18, 18],
-          iconAnchor: [9, 9],
+          iconSize: activeGame ? [40, 40] : [18, 18],
+          iconAnchor: activeGame ? [20, 20] : [9, 9],
         });
 
         const marker = L.marker([court.coords.lat, court.coords.lng], { icon: customIcon });

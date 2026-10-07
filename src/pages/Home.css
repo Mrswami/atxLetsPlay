@@ -1424,3 +1424,32 @@
   font-size: 0.8rem;
   color: var(--text-secondary);
 }
+
+.haf-rsvp-btn {
+  margin-left: auto;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  border: none;
+  background: var(--color-primary, #ef4444);
+  color: white;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.haf-rsvp-btn:hover {
+  transform: scale(1.05);
+}
+
+.haf-rsvp-btn:active {
+  transform: scale(0.95);
+}
+
+.haf-rsvp-btn.leave {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
