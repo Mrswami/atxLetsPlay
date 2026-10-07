@@ -97,6 +97,14 @@ export default function CourtDetail() {
         </div>
         <h1 className="cd-court-name">{court.name}</h1>
         <p className="cd-district">{districtName} · {court.address}</p>
+        
+        {/* Permit Warning */}
+        <div className="cd-permit-warning" style={{ background: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.4)', padding: '0.75rem', borderRadius: '8px', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          <strong>⚠️ City Parks Permit Notice:</strong> <br/>
+          Official reservations may be required for exclusive use, leagues, or large groups at PARD courts. <br/>
+          Contact Austin Parks & Rec Athletics: <br/>
+          Email: <a href="mailto:reservations@austintexas.gov" style={{color: 'var(--accent-primary)'}}>reservations@austintexas.gov</a> | Phone: <strong>3-1-1</strong>
+        </div>
       </div>
 
       {/* ── Tab Nav ── */}

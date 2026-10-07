@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
 import Avatar from '../components/Avatar';
@@ -64,7 +64,24 @@ export default function LiveGame() {
     }, 2000);
   };
 
+  const handleUpdateScore = async (home, away) => {
+    if (user?.uid !== game.createdBy && user?.uid !== game.creatorId) return;
+    try {
+      await updateDoc(doc(db, 'games', gameId), {
+        score: { home, away }
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   if (!game) return <div className="live-game-loading">Loading live stream...</div>;
+
+  const scheduledDate = game.scheduledTime ? game.scheduledTime.toDate() : new Date();
+  const isOver = scheduledDate.getTime() <= Date.now() - (2 * 60 * 60 * 1000);
+  const homeScore = game.score?.home || 0;
+  const awayScore = game.score?.away || 0;
+  const isHost = user?.uid === game.createdBy || user?.uid === game.creatorId;
 
   return (
     <div className="live-game-page">
@@ -76,14 +93,39 @@ export default function LiveGame() {
         </button>
         <div className="lg-header-info">
           <h2>{game.courtName}</h2>
-          <span className="lg-live-badge">● LIVE</span>
+          {isOver ? (
+            <span className="lg-live-badge" style={{ color: 'var(--text-secondary)', animation: 'none' }}>ENDED</span>
+          ) : (
+            <span className="lg-live-badge">● LIVE</span>
+          )}
         </div>
       </header>
 
       <div className="lg-video-placeholder">
         <div className="lg-video-overlay">
-          <Avatar url={game.hostAvatarUrl} name={game.hostName || game.creatorName} size="large" />
-          <p className="lg-host-name">{game.hostName || game.creatorName || 'Guest'} is hosting {game.sport}</p>
+          <Avatar url={game.hostAvatarUrl} name={game.creatorName || game.hostName} size="large" />
+          <p className="lg-host-name">{game.creatorName || game.hostName || (game.createdBy?.startsWith('guest-') ? 'A Guest Player' : 'A Player')} {isOver ? 'hosted' : 'is hosting'} {game.sport}</p>
+          <div className="lg-participants">
+            <span className="lg-player-count">👥 {game.currentPlayers?.length || 1} participant(s)</span>
+          </div>
+          
+          <div className="lg-score-tracker">
+            <div className="lg-score-team">
+              <span>Home</span>
+              <span className="lg-score-num">{homeScore}</span>
+              {isHost && !isOver && (
+                <button onClick={() => handleUpdateScore(homeScore + 1, awayScore)}>+</button>
+              )}
+            </div>
+            <div className="lg-score-divider">-</div>
+            <div className="lg-score-team">
+              <span>Away</span>
+              <span className="lg-score-num">{awayScore}</span>
+              {isHost && !isOver && (
+                <button onClick={() => handleUpdateScore(homeScore, awayScore + 1)}>+</button>
+              )}
+            </div>
+          </div>
         </div>
         
         {/* Floating Hearts Container */}
@@ -110,23 +152,25 @@ export default function LiveGame() {
           <div ref={chatEndRef} />
         </div>
         
-        <div className="lg-chat-actions">
-          <form onSubmit={handleSendChat} className="lg-chat-form">
-            <input 
-              type="text" 
-              placeholder="Chat..." 
-              value={newMessage}
-              onChange={e => setNewMessage(e.target.value)}
-              className="lg-chat-input"
-            />
-            <button type="submit" className="lg-chat-send" disabled={!newMessage.trim() || !user}>
-               Send
+        {!isOver && (
+          <div className="lg-chat-actions">
+            <form onSubmit={handleSendChat} className="lg-chat-form">
+              <input 
+                type="text" 
+                placeholder="Chat..." 
+                value={newMessage}
+                onChange={e => setNewMessage(e.target.value)}
+                className="lg-chat-input"
+              />
+              <button type="submit" className="lg-chat-send" disabled={!newMessage.trim() || !user}>
+                 Send
+              </button>
+            </form>
+            <button type="button" className="lg-heart-btn" onClick={handleSendHeart}>
+               ❤️
             </button>
-          </form>
-          <button type="button" className="lg-heart-btn" onClick={handleSendHeart}>
-             ❤️
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased] - 2026-10-07
 
 ### Added
-- **Live Game Chat**: Added a new `/live-game/:gameId` route. Live games in the ATX feed now route to a real-time chat page with floating YouTube-style heart reactions and timestamped messages.
-- **Guest Game Hosting**: Removed the hard stop for unverified users to allow "Guests" to host games. Created a 1-minute buffer for game creation time validation.
-- **Profile Interactions**: Added prominent "Add Friend" and "Message" buttons on public profiles to improve social connectivity visibility.
+- **Live Game Chat & Score**: Added a new `/live-game/:gameId` route. Live games in the ATX feed now route to a real-time chat page with floating YouTube-style heart reactions, timestamped messages, and a host-controlled Home/Away score tracker.
+- **Ended Game States**: Games that finished over 2 hours ago are now faded in the live feed. Clicking an ended game provides read-only access to final scores, participants, and chat logs.
+- **City Permit Warnings**: Implemented warning banners in the Court Detail and Game Scheduling screens detailing official Austin Parks & Rec (PARD) permit requirements for exclusive usage, including contact info (email and 3-1-1 phone line).
+- **Guest Game Hosting**: Removed the hard stop for unverified users to allow "Guests" to host games. Created a 1-minute buffer for game creation time validation. Guest hosts now accurately display as "A Guest Player" in the live feed.
 - **Username Availability Check**: Added a "Check" button next to the unique username field in the `Settings` page. Uses Firebase Firestore to check for uniqueness before saving.
 - **Find Friends Tab**: Added a dedicated standalone "Find Friends" tab into the Settings screen. It includes a search bar to look up users by their unique `@username`.
 - **Email Notification Toggles**: Added mock UI toggles for "Game Reminders", "Court Invitations", and "Friend Invitations & Adds" in the Alerts & Privacy settings tab.

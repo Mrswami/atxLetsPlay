@@ -165,6 +165,12 @@ export default function CreateGame() {
           </div>
         </div>
 
+        <div className="cg-permit-warning" style={{ background: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.4)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          <strong>⚠️ Permit Notice:</strong> <br/>
+          If this is an official City of Austin park, you may need a permit for exclusive use. <br/>
+          Contact Austin Parks & Rec Athletics: <a href="mailto:reservations@austintexas.gov" style={{color: 'var(--accent-primary)'}}>reservations@austintexas.gov</a> or call <strong>3-1-1</strong>.
+        </div>
+
         <form className="cg-form" onSubmit={handleSubmit}>
           {error && <div className="cg-form-error">{error}</div>}
 

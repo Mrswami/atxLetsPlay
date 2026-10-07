@@ -400,21 +400,24 @@ export default function Home() {
                 const scheduledDate = game.scheduledTime ? new Date(game.scheduledTime) : new Date();
                 const isJoined = user && game.currentPlayers?.includes(user.uid);
                 
-                const isLive = scheduledDate.getTime() <= Date.now();
+                const isLive = scheduledDate.getTime() <= Date.now() && scheduledDate.getTime() > Date.now() - (2 * 60 * 60 * 1000);
+                const isOver = scheduledDate.getTime() <= Date.now() - (2 * 60 * 60 * 1000);
+                
                 return (
-                  <div key={game.id} className="haf-item" onClick={() => {
-                    if (isLive) {
+                  <div key={game.id} className={`haf-item ${isOver ? 'haf-item-over' : ''}`} style={{ opacity: isOver ? 0.5 : 1, transition: 'opacity 0.3s' }} onClick={() => {
+                    if (isLive || isOver) {
                       navigate(`/live-game/${game.id}`);
                     } else {
                       navigate(`/court/${game.courtId}`);
                     }
                   }}>
-                    <Avatar url={game.hostAvatarUrl} name={game.hostName} size="small" />
+                    <Avatar url={game.hostAvatarUrl} name={game.creatorName || game.hostName} size="small" />
                     <div className="haf-content">
                       <p>
-                        <strong>{game.hostName || 'A Guest Player'}</strong> is hosting a {sm.emoji} <strong>{sm.label}</strong> pickup game at <strong>{court?.name || 'a court'}</strong>.
+                        <strong>{game.creatorName || game.hostName || (game.createdBy?.startsWith('guest-') ? 'A Guest Player' : 'A Player')}</strong> is hosting a {sm.emoji} <strong>{sm.label}</strong> pickup game at <strong>{court?.name || 'a court'}</strong>.
                       </p>
                       <span className="haf-time">
+                        {isOver ? 'Ended ' : (isLive ? 'LIVE ' : '')}
                         {scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         {game.currentPlayers && game.currentPlayers.length > 1 && ` · ${game.currentPlayers.length} players joined`}
                       </span>
@@ -422,6 +425,8 @@ export default function Home() {
                     <button 
                       className={`haf-rsvp-btn ${isJoined ? 'leave' : ''}`}
                       onClick={(e) => handleFeedRSVP(e, game)}
+                      disabled={isOver}
+                      style={{ display: isOver ? 'none' : 'block' }}
                     >
                       {isJoined ? 'LEAVE' : 'I GOT NEXT'}
                     </button>
