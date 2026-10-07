@@ -14,6 +14,7 @@ import {
   updatePassword,
   deleteUser,
   linkWithCredential,
+  linkWithPopup,
   EmailAuthProvider,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, deleteDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
@@ -220,23 +221,55 @@ export function AuthProvider({ children }) {
   }
 
   async function loginWithGoogle() {
+    const isUpgradingGuest = user && isGuest;
+    const oldProfile = userProfile ? { ...userProfile } : null;
+
+    const provider = new GoogleAuthProvider();
+    let cred;
+
+    try {
+      if (isUpgradingGuest && auth.currentUser) {
+        try {
+          cred = await linkWithPopup(auth.currentUser, provider);
+        } catch (linkErr) {
+          if (linkErr.code === 'auth/credential-already-in-use') {
+            // Google account exists, just sign in
+            cred = await signInWithPopup(auth, provider);
+          } else {
+            throw linkErr;
+          }
+        }
+      } else {
+        cred = await signInWithPopup(auth, provider);
+      }
+    } catch (err) {
+      throw err;
+    }
+
     localStorage.removeItem('atx_is_guest');
     setIsGuest(false);
-    const provider = new GoogleAuthProvider();
-    const cred = await signInWithPopup(auth, provider);
+
     const profileRef = doc(db, 'users', cred.user.uid);
     const profileSnap = await getDoc(profileRef);
     if (!profileSnap.exists()) {
+      // Retain guest info if available
       await setDoc(profileRef, {
-        displayName: cred.user.displayName || '',
+        displayName: cred.user.displayName || oldProfile?.displayName || '',
         email: cred.user.email || '',
-        avatarUrl: cred.user.photoURL || '',
-        district: '',
-        xp: 0,
-        gamesPlayed: 0,
+        avatarUrl: cred.user.photoURL || oldProfile?.avatarUrl || '',
+        district: oldProfile?.district || '',
+        xp: oldProfile?.xp || 0,
+        gamesPlayed: oldProfile?.gamesPlayed || 0,
         createdAt: serverTimestamp(),
       });
+    } else if (isUpgradingGuest && oldProfile && profileSnap.exists()) {
+      // If logging into an existing account, we could merge XP, but safely just ensure we aren't overwriting
+      await setDoc(profileRef, {
+        xp: Math.max(oldProfile.xp || 0, profileSnap.data().xp || 0),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
     }
+    
     return cred.user;
   }
 

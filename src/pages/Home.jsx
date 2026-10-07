@@ -18,6 +18,8 @@ export default function Home() {
   const [viewMode, setViewMode] = useState('street'); // 'street' | 'dashboard'
   const [courts, setCourts] = useState(AUSTIN_COURTS_DATA || []);
   const [showCourtSelect, setShowCourtSelect] = useState(false);
+  const [showSuggestModal, setShowSuggestModal] = useState(false);
+  const [suggestForm, setSuggestForm] = useState({ name: '', location: '', sport: 'Basketball', notes: '' });
 
   const displayName = userProfile?.displayName || user?.displayName || 'Player';
   const xp = userProfile?.xp || 0;
@@ -104,7 +106,21 @@ export default function Home() {
 
   const handleCourtSelect = useCallback((courtId) => {
     navigate(`/court/${courtId}`);
-  }, [navigate]);  return (
+  }, [navigate]);
+
+  const handleSuggestSubmit = (e) => {
+    e.preventDefault();
+    const { name, location, sport, notes } = suggestForm;
+    const subject = encodeURIComponent(`New Court Suggestion: ${name}`);
+    const body = encodeURIComponent(
+      `Court Name: ${name}\nLocation: ${location}\nSport: ${sport}\n\nNotes:\n${notes}`
+    );
+    window.location.href = `mailto:jacobflutterdev@gmail.com?subject=${subject}&body=${body}`;
+    setShowSuggestModal(false);
+    setSuggestForm({ name: '', location: '', sport: 'Basketball', notes: '' });
+  };
+
+  return (
     <div
       className={`home-page ${searchFocused ? 'search-active' : ''}`}
       ref={containerRef}
@@ -278,6 +294,27 @@ export default function Home() {
             </svg>
             I GOT NEXT
           </button>
+          <button
+            onClick={() => setShowSuggestModal(true)}
+            className="action-btn"
+            style={{ 
+              marginTop: '0.2rem', 
+              background: 'rgba(255, 255, 255, 0.05)', 
+              border: '1px solid var(--glass-border)', 
+              color: 'var(--text-secondary)',
+              padding: '0.75rem',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              width: '100%',
+              borderRadius: '16px',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '0.9rem'
+            }}
+          >
+            💡 Suggest a New Court
+          </button>
         </div>
 
       </div>
@@ -317,6 +354,67 @@ export default function Home() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suggestion Modal Drawer */}
+      {showSuggestModal && (
+        <div className="court-select-overlay" onClick={() => setShowSuggestModal(false)}>
+          <div className="court-select-drawer suggest-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="cs-header">
+              <h2>Suggest a Court</h2>
+              <button className="cs-close" onClick={() => setShowSuggestModal(false)}>×</button>
+            </div>
+            <div className="cs-body" style={{ padding: '1.25rem' }}>
+              <form onSubmit={handleSuggestSubmit} className="suggest-form">
+                <div className="form-group">
+                  <label>Court/Park Name</label>
+                  <input 
+                    required 
+                    value={suggestForm.name} 
+                    onChange={e => setSuggestForm({...suggestForm, name: e.target.value})} 
+                    placeholder="e.g. Barton Hills Elementary" 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Location/Address</label>
+                  <input 
+                    required 
+                    value={suggestForm.location} 
+                    onChange={e => setSuggestForm({...suggestForm, location: e.target.value})} 
+                    placeholder="e.g. 2108 Barton Haven Rd" 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Primary Sport</label>
+                  <select 
+                    value={suggestForm.sport} 
+                    onChange={e => setSuggestForm({...suggestForm, sport: e.target.value})}
+                  >
+                    <option value="Basketball">Basketball 🏀</option>
+                    <option value="Tennis">Tennis 🎾</option>
+                    <option value="Pickleball">Pickleball 🏓</option>
+                    <option value="Volleyball">Volleyball 🏐</option>
+                    <option value="Soccer">Soccer ⚽</option>
+                    <option value="Disc Golf">Disc Golf 🥏</option>
+                    <option value="Other">Other / Not Listed</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Additional Notes</label>
+                  <textarea 
+                    value={suggestForm.notes} 
+                    onChange={e => setSuggestForm({...suggestForm, notes: e.target.value})} 
+                    placeholder="Lights? Indoor/Outdoor? Smoothness?" 
+                    rows="3"
+                  />
+                </div>
+                <button type="submit" className="action-btn action-btn--create" style={{ marginTop: '1rem', width: '100%' }}>
+                  SEND SUGGESTION
+                </button>
+              </form>
             </div>
           </div>
         </div>

@@ -62,11 +62,12 @@ export default function CourtDetail() {
       {/* ── Hero Section ── */}
       <div
         className="court-hero"
-        style={
-          court.thumbnailUrl
-            ? { backgroundImage: `url(${court.thumbnailUrl})` }
-            : { background: `linear-gradient(145deg, ${meta?.color || 'var(--accent-primary)'}33, ${meta?.color || 'var(--accent-primary)'}11)` }
-        }
+        style={{
+          backgroundImage: `url(${court.thumbnailUrl || getCartoonImageUrl(court.id)})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
       >
         {/* Back button */}
         <button
@@ -78,17 +79,6 @@ export default function CourtDetail() {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-
-        {/* Hero content */}
-        <div className="court-hero-content">
-          {!court.thumbnailUrl && (
-            <img 
-              src={getCartoonImageUrl(court.id)} 
-              alt="Court 3D Icon" 
-              className="cd-hero-3d-icon" 
-            />
-          )}
-        </div>
       </div>
 
       {/* ── Court Title ── */}
@@ -167,6 +157,17 @@ export default function CourtDetail() {
                 Get Directions in Google Maps
               </a>
             )}
+
+            <a
+              href={`mailto:jacobflutterdev@gmail.com?subject=Suggestion%20for%20${encodeURIComponent(court.name)}`}
+              className="cd-maps-link"
+              style={{ marginTop: '0.75rem', borderColor: 'var(--glass-border)', color: 'var(--text-secondary)' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              Suggest an Edit or Feature
+            </a>
           </div>
         )}
 
