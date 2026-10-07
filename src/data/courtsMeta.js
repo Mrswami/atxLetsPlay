@@ -297,6 +297,24 @@ export const AUSTIN_COURTS_DATA = [
 
   // ── MUELLER ──
   {
+    id: 'mueller-browning-hangar',
+    name: 'Browning Hangar PActanque Court',
+    shortName: 'Browning Hangar',
+    district: 'mueller',
+    sport: ['petanque'],
+    address: '4550 Mueller Blvd, Austin, TX 78723',
+    coords: { lat: 30.2985, lng: -97.7058 },
+    surface: 'dirt',
+    lights: true,
+    indoor: false,
+    accessibility: true,
+    amenities: ['restrooms', 'water', 'shade', 'seating'],
+    courtCount: 2,
+    status: 'active',
+    description: 'Beautifully shaded pActanque courts situated underneath the massive arched wooden architecture of the historic Browning Hangar.',
+    googleMapsUrl: 'https://maps.google.com/?q=Browning+Hangar+Mueller+Austin+TX',
+  },
+  {
     id: 'mueller-basketball-rec',
     name: 'Mueller Rec Center Courts',
     shortName: 'Mueller Rec',
