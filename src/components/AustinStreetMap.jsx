@@ -21,16 +21,11 @@ const getCartoonIcon = (courtId) => {
 };
 
 const TILE_LAYERS = {
-  cartodb_voyager: {
+  esri_topo: {
     name: '🗺️ Minimal Clean World',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  },
-  google_satellite: {
-    name: '🛰️ Real Satellite Imagery',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; Esri World Imagery',
-  },
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri World Topo Map',
+  }
 };
 
 const DISTRICT_COLORS = [
@@ -54,7 +49,7 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
   const [activeDistrictZone, setActiveDistrictZone] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTileLayer, setSelectedTileLayer] = useState('cartodb_voyager');
+  const [selectedTileLayer, setSelectedTileLayer] = useState('esri_topo');
   const [currentZoom, setCurrentZoom] = useState(12);
   const [isSearching, setIsSearching] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
@@ -359,20 +354,7 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
       {/* Map Leaflet Container */}
       <div className="asm-map-container" ref={mapContainerRef} />
 
-      {/* Layer Switcher (Top Right) */}
-      <div className="asm-layer-switcher">
-        <select
-          className="asm-layer-select"
-          value={selectedTileLayer}
-          onChange={(e) => setSelectedTileLayer(e.target.value)}
-        >
-          {Object.keys(TILE_LAYERS).map((layerKey) => (
-            <option key={layerKey} value={layerKey}>
-              {TILE_LAYERS[layerKey].name}
-            </option>
-          ))}
-        </select>
-      </div>
+
 
 
 
