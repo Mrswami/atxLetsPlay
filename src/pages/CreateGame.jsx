@@ -15,7 +15,11 @@ export default function CreateGame() {
   const { court, loading: courtLoading, error: courtError } = useCourt(courtId);
 
   const [sport, setSport] = useState('');
-  const [scheduledTime, setScheduledTime] = useState('');
+  const formatForInput = (d) => {
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+  };
+  const [scheduledTime, setScheduledTime] = useState(formatForInput(new Date()));
   const [maxPlayers, setMaxPlayers] = useState('10');
   const [skillLevel, setSkillLevel] = useState('casual');
   const [subCourt, setSubCourt] = useState('');
@@ -139,6 +143,8 @@ export default function CreateGame() {
               id="cg-time"
               type="datetime-local"
               value={scheduledTime}
+              min={formatForInput(new Date())}
+              max={formatForInput(new Date(new Date().setMonth(new Date().getMonth() + 3)))}
               onChange={(e) => setScheduledTime(e.target.value)}
               required
             />
