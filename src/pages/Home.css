@@ -1,7 +1,7 @@
-/* ═══════════════════════════════════════════════════
-   HOME — Two-state: Dashboard ↔ Full Map
+﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   HOME â€” Two-state: Dashboard â†” Full Map
    Scroll zooms into map, then locks.
-   ═══════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 .home-page {
   height: 100vh;
@@ -11,13 +11,13 @@
   position: relative;
 }
 
-/* ─── Scroll spacer creates the scroll distance for the zoom ─── */
+/* â”€â”€â”€ Scroll spacer creates the scroll distance for the zoom â”€â”€â”€ */
 .scroll-spacer {
   height: 120vh;
   pointer-events: none;
 }
 
-/* ═══ DASHBOARD LAYER ═══
+/* â•â•â• DASHBOARD LAYER â•â•â•
    Floats on top of everything */
 .dashboard-layer {
   position: fixed;
@@ -35,7 +35,7 @@
   transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
-/* ─── Header ─── */
+/* â”€â”€â”€ Header â”€â”€â”€ */
 .home-header {
   display: flex;
   align-items: center;
@@ -77,19 +77,19 @@
   font-size: 0.95rem;
 }
 
-/* ─── Search ─── */
+/* â”€â”€â”€ Search â”€â”€â”€ */
 .home-search {
   width: 100%;
 }
 
-/* ─── Avatar ─── */
+/* â”€â”€â”€ Avatar â”€â”€â”€ */
 .home-avatar {
   display: flex;
   justify-content: center;
   padding: 0.15rem 0;
 }
 
-/* ─── Avatar button wrapper ─── */
+/* â”€â”€â”€ Avatar button wrapper â”€â”€â”€ */
 .home-avatar-btn {
   background: transparent;
   border: none;
@@ -107,7 +107,7 @@
   transform: scale(0.95);
 }
 
-/* ─── Utility row ─── */
+/* â”€â”€â”€ Utility row â”€â”€â”€ */
 .home-utility-row {
   display: flex;
   gap: 0.85rem;
@@ -116,7 +116,7 @@
   margin: 0.15rem 0;
 }
 
-/* ─── Utility buttons (LARGE, prominent) ─── */
+/* â”€â”€â”€ Utility buttons (LARGE, prominent) â”€â”€â”€ */
 .settings-cog,
 .leaderboard-btn {
   width: 60px;
@@ -165,7 +165,7 @@
   transform: scale(0.95);
 }
 
-/* ─── Actions ─── */
+/* â”€â”€â”€ Actions â”€â”€â”€ */
 .home-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -225,7 +225,7 @@
   box-shadow: 0 4px 18px rgba(245, 158, 11, 0.2);
 }
 
-/* ═══ MAP LAYER ═══
+/* â•â•â• MAP LAYER â•â•â•
    Fixed at bottom, scales up with scroll.
    Starts small (0.45), grows to fill screen (1.0) */
 .map-layer {
@@ -272,7 +272,7 @@
   max-width: 520px;
 }
 
-/* ═══ BACK BUTTON ═══
+/* â•â•â• BACK BUTTON â•â•â•
    Only appears when map is full/locked */
 .back-to-dash {
   position: fixed;
@@ -317,7 +317,7 @@
   transform: translateX(0) scale(1.05);
 }
 
-/* ─── Court Selector Drawer ─── */
+/* â”€â”€â”€ Court Selector Drawer â”€â”€â”€ */
 .court-select-overlay {
   position: fixed;
   top: 0;
@@ -469,7 +469,7 @@
   transform: translateX(4px);
 }
 
-/* ─── Search Recommendations Dropdown Overlay ─── */
+/* â”€â”€â”€ Search Recommendations Dropdown Overlay â”€â”€â”€ */
 .back-to-dash {
   position: fixed;
   top: 1.25rem;
@@ -513,7 +513,7 @@
   transform: translateX(0) scale(1.05);
 }
 
-/* ─── Court Selector Drawer ─── */
+/* â”€â”€â”€ Court Selector Drawer â”€â”€â”€ */
 .court-select-overlay {
   position: fixed;
   top: 0;
@@ -665,7 +665,7 @@
   transform: translateX(4px);
 }
 
-/* ─── Search Recommendations Dropdown Overlay ─── */
+/* â”€â”€â”€ Search Recommendations Dropdown Overlay â”€â”€â”€ */
 .home-search {
   position: relative;
   width: 100%;
@@ -800,7 +800,7 @@
   }
 }
 
-/* ─── Search Onboarding Personalization Hint ─── */
+/* â”€â”€â”€ Search Onboarding Personalization Hint â”€â”€â”€ */
 .srd-item-personal {
   font-size: 0.68rem;
   color: var(--accent-primary);
@@ -809,7 +809,7 @@
   letter-spacing: 0.01em;
 }
 
-/* ─── Search Overlay Backdrop ─── */
+/* â”€â”€â”€ Search Overlay Backdrop â”€â”€â”€ */
 .search-overlay-backdrop {
   position: fixed;
   top: 0;
@@ -847,7 +847,7 @@
   transition: opacity 0.3s ease;
 }
 
-/* ─── Floating Swipe Down Hint ─── */
+/* â”€â”€â”€ Floating Swipe Down Hint â”€â”€â”€ */
 .map-swipe-hint {
   position: fixed;
   bottom: 12vh;
@@ -892,9 +892,9 @@
   }
 }
 
-/* ═══════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    WORLD GLOBE FULLSCREEN MODE
-   ═══════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* Dashboard state changes */
 .dashboard-layer {
@@ -990,9 +990,9 @@
   transform: scale(0.95);
 }
 
-/* ═══════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    GLOBE PREVIEW TEASER CARD
-   ═══════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 .globe-preview-card {
   width: 100%;
@@ -1118,7 +1118,7 @@
   50% { transform: translateY(-5px) rotate(10deg); }
 }
 
-/* ── World Globe Fullscreen Layer ── */
+/* â”€â”€ World Globe Fullscreen Layer â”€â”€ */
 .world-fullscreen {
   position: fixed;
   inset: 0;
@@ -1314,46 +1314,44 @@
 }
 
 
- . o v e r w o r l d - l o g i n - b t n   { 
-     p o s i t i o n :   f i x e d ; 
-     t o p :   1 6 p x ; 
-     r i g h t :   1 6 p x ; 
-     z - i n d e x :   2 0 0 0 ; 
-     b a c k g r o u n d :   r g b a ( 1 5 ,   2 3 ,   4 2 ,   0 . 9 ) ; 
-     b a c k d r o p - f i l t e r :   b l u r ( 1 6 p x ) ; 
-     - w e b k i t - b a c k d r o p - f i l t e r :   b l u r ( 1 6 p x ) ; 
-     b o r d e r :   1 p x   s o l i d   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 1 8 ) ; 
-     b o r d e r - r a d i u s :   9 9 9 9 p x ; 
-     p a d d i n g :   8 p x   1 6 p x ; 
-     c o l o r :   # f f f ; 
-     f o n t - w e i g h t :   6 0 0 ; 
-     f o n t - s i z e :   0 . 9 r e m ; 
-     c u r s o r :   p o i n t e r ; 
-     b o x - s h a d o w :   0   8 p x   3 0 p x   r g b a ( 0 ,   0 ,   0 ,   0 . 5 ) ; 
-     t r a n s i t i o n :   a l l   0 . 2 s   e a s e ; 
- } 
- 
- . o v e r w o r l d - l o g i n - b t n : h o v e r   { 
-     b a c k g r o u n d :   r g b a ( 3 0 ,   4 1 ,   5 9 ,   0 . 9 ) ; 
-     t r a n s f o r m :   t r a n s l a t e Y ( - 2 p x ) ; 
- } 
- 
- . o v e r w o r l d - a v a t a r - b t n   { 
-     p o s i t i o n :   f i x e d ; 
-     t o p :   1 6 p x ; 
-     r i g h t :   1 6 p x ; 
-     z - i n d e x :   2 0 0 0 ; 
-     b a c k g r o u n d :   n o n e ; 
-     b o r d e r :   n o n e ; 
-     p a d d i n g :   0 ; 
-     c u r s o r :   p o i n t e r ; 
-     b o r d e r - r a d i u s :   5 0 % ; 
-     b o x - s h a d o w :   0   4 p x   1 5 p x   r g b a ( 0 ,   0 ,   0 ,   0 . 5 ) ; 
-     t r a n s i t i o n :   t r a n s f o r m   0 . 2 s   e a s e ; 
- } 
- 
- . o v e r w o r l d - a v a t a r - b t n : h o v e r   { 
-     t r a n s f o r m :   s c a l e ( 1 . 0 5 ) ; 
- } 
-  
- 
+.overworld-login-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2000;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+  padding: 8px 16px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+.overworld-login-btn:hover {
+  background: rgba(30, 41, 59, 0.9);
+  transform: translateY(-2px);
+}
+
+.overworld-avatar-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2000;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease;
+}
+
+.overworld-avatar-btn:hover {
+  transform: scale(1.05);
+}
