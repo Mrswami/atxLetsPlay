@@ -1,0 +1,210 @@
+.live-game-page {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.live-game-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.live-game-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--glass-border);
+  gap: 1rem;
+  z-index: 10;
+}
+
+.lg-back-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.lg-back-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.lg-header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.lg-header-info h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.lg-live-badge {
+  color: #ff3b30;
+  font-size: 0.8rem;
+  font-weight: 900;
+  font-family: var(--font-display);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.lg-video-placeholder {
+  flex: 1;
+  background: linear-gradient(135deg, #1a2236, #0a0e17);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.lg-video-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lg-host-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+/* Floating Hearts */
+.lg-hearts-container {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.lg-floating-heart {
+  position: absolute;
+  bottom: -30px;
+  font-size: 2rem;
+  animation: floatUp 2s ease-in forwards;
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-300px) scale(1.5) rotate(20deg); opacity: 0; }
+}
+
+.lg-chat-section {
+  height: 40vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-elevated);
+  border-top: 1px solid var(--glass-border);
+}
+
+.lg-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lg-chat-message {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.lg-chat-time {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.lg-chat-sender {
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.lg-chat-text {
+  color: var(--text-primary);
+}
+
+.lg-chat-actions {
+  display: flex;
+  padding: 0.75rem;
+  gap: 0.5rem;
+  background: var(--surface-card);
+  border-top: 1px solid var(--glass-border);
+  align-items: center;
+}
+
+.lg-chat-form {
+  display: flex;
+  flex: 1;
+  gap: 0.5rem;
+}
+
+.lg-chat-input {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.lg-chat-send {
+  background: var(--accent-primary);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lg-chat-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lg-heart-btn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}

@@ -6,18 +6,18 @@
 }
 
 .avatar--large {
-  width: 140px;
-  height: 140px;
+  width: 180px;
+  height: 180px;
 }
 
 .avatar--medium {
-  width: 80px;
-  height: 80px;
+  width: 110px;
+  height: 110px;
 }
 
 .avatar--small {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
 }
 
 .avatar-glow {
@@ -43,7 +43,6 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--accent-primary);
   position: relative;
   z-index: 1;
 }

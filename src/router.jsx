@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import Friends from './pages/Friends';
 import Leaderboard from './pages/Leaderboard';
 import Onboarding from './pages/Onboarding';
+import LiveGame from './pages/LiveGame';
 import Loading from './components/Loading';
 
 function ProtectedRoute({ children }) {
@@ -77,6 +78,7 @@ export default function AppRouter() {
         {/* Court detail — public */}
         <Route path="/court/:courtId" element={<CourtDetail />} />
         <Route path="/friends" element={<Friends />} />
+        <Route path="/live-game/:gameId" element={<LiveGame />} />
       </Routes>
     </BrowserRouter>
   );

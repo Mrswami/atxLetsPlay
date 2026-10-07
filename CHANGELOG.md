@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased] - 2026-10-07
 
 ### Added
+- **Live Game Chat**: Added a new `/live-game/:gameId` route. Live games in the ATX feed now route to a real-time chat page with floating YouTube-style heart reactions and timestamped messages.
+- **Guest Game Hosting**: Removed the hard stop for unverified users to allow "Guests" to host games. Created a 1-minute buffer for game creation time validation.
+- **Profile Interactions**: Added prominent "Add Friend" and "Message" buttons on public profiles to improve social connectivity visibility.
 - **Username Availability Check**: Added a "Check" button next to the unique username field in the `Settings` page. Uses Firebase Firestore to check for uniqueness before saving.
 - **Find Friends Tab**: Added a dedicated standalone "Find Friends" tab into the Settings screen. It includes a search bar to look up users by their unique `@username`.
 - **Email Notification Toggles**: Added mock UI toggles for "Game Reminders", "Court Invitations", and "Friend Invitations & Adds" in the Alerts & Privacy settings tab.
@@ -21,6 +24,8 @@ All notable changes to this project will be documented in this file.
 - **Save Buttons**: Replaced the sticky `isDirty` auto-save action bar with explicit, static "Save Profile Changes" buttons at the bottom of each respective tab.
 - **Map Base Layer**: Switched the `AustinStreetMap` map base layer from `esri_gray` to `CartoDB Voyager`. The new map style correctly renders parks in green and water in blue, maintaining a light aesthetic.
 - **Courts Data**: Petanque now labelled "Hangar"; spelling/character-encoding fixes; removed the first-screenshot court in favour of the second.
+- **ATX Live Feed Data**: The Live Feed now dynamically displays the actual username (`hostName`) or "A Guest Player" instead of static mock data.
+- **Avatar Styling**: Removed the pulsing `.avatar-ring-glow` border from avatars globally, and increased the avatar dimensions (`large` is 180px, `medium` is 110px) to make them more visible.
 
 ### Fixed
 - **Alerts & Privacy toggles**: the four existing toggles (pickup alerts, game invites, on-court status, public profile) never changed state because their setters were missing; they now update and save instantly.

@@ -73,8 +73,8 @@ export default function CreateGame() {
         throw new Error('Please enter a valid scheduled date and time.');
       }
 
-      if (dateObj.getTime() < Date.now() - 10 * 60000) {
-        throw new Error('Scheduled time cannot be in the past.');
+      if (dateObj.getTime() < Date.now() - 60000) {
+        throw new Error('Scheduled time cannot be in the past (1 minute buffer allowed).');
       }
 
       const userRef = doc(db, 'users', user.uid);
@@ -167,7 +167,7 @@ export default function CreateGame() {
 
         <form className="cg-form" onSubmit={handleSubmit}>
           {error && <div className="cg-form-error">{error}</div>}
-          <VerifyEmailBanner />
+
 
           {/* Sport Selection */}
           <div className="form-group">

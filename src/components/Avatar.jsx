@@ -7,7 +7,6 @@ export default function Avatar({ url, name, size = 'large', xp = 0 }) {
 
   return (
     <div className={`avatar avatar--${size}`}>
-      <div className="avatar-glow"></div>
       {url ? (
         <img src={url} alt={name || 'Avatar'} className="avatar-img" />
       ) : (

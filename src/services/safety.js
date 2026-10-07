@@ -23,11 +23,10 @@ export function isVerifiedUser(u = auth.currentUser) {
 
 export function assertCanParticipate() {
   const u = auth.currentUser;
-  if (!u || u.isAnonymous) {
-    throw new Error('Create an account and verify your email to join or host games.');
-  }
-  if (!u.emailVerified) {
-    throw new Error('Please verify your email to join or host games. Check your inbox (and spam).');
+  // Allow guests and unverified users based on recent user feedback
+  // Guests can now host games.
+  if (!u) {
+    throw new Error('Create an account or continue as guest to join or host games.');
   }
 }
 

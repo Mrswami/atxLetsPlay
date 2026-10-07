@@ -192,6 +192,17 @@ export default function Profile() {
         </div>
 
         {!isOwnProfile && user && !user.isAnonymous && (
+          <div className="profile-actions-row" style={{ display: 'flex', gap: '1rem', marginTop: '1rem', marginBottom: '1rem', justifyContent: 'center' }}>
+            <button className="action-btn action-btn--join" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <span>🤝</span> Add Friend
+            </button>
+            <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--surface-elevated)' }} onClick={() => navigate('/friends')}>
+              <span>💬</span> Message
+            </button>
+          </div>
+        )}
+
+        {!isOwnProfile && user && !user.isAnonymous && (
           <div className="profile-section" id="safety-actions">
             <h3>Safety</h3>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

@@ -400,12 +400,19 @@ export default function Home() {
                 const scheduledDate = game.scheduledTime ? new Date(game.scheduledTime) : new Date();
                 const isJoined = user && game.currentPlayers?.includes(user.uid);
                 
+                const isLive = scheduledDate.getTime() <= Date.now();
                 return (
-                  <div key={game.id} className="haf-item" onClick={() => navigate(`/court/${game.courtId}`)}>
+                  <div key={game.id} className="haf-item" onClick={() => {
+                    if (isLive) {
+                      navigate(`/live-game/${game.id}`);
+                    } else {
+                      navigate(`/court/${game.courtId}`);
+                    }
+                  }}>
                     <Avatar url={game.hostAvatarUrl} name={game.hostName} size="small" />
                     <div className="haf-content">
                       <p>
-                        <strong>{game.hostName || 'A player'}</strong> is hosting a {sm.emoji} <strong>{sm.label}</strong> pickup game at <strong>{court?.name || 'a court'}</strong>.
+                        <strong>{game.hostName || 'A Guest Player'}</strong> is hosting a {sm.emoji} <strong>{sm.label}</strong> pickup game at <strong>{court?.name || 'a court'}</strong>.
                       </p>
                       <span className="haf-time">
                         {scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

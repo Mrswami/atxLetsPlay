@@ -259,13 +259,11 @@
 }
 
 .avatar-ring-glow {
-  width: 88px;
-  height: 88px;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
   position: relative;
   background: var(--surface-elevated);
-  border: 2px solid var(--accent-primary);
-  animation: pulseGlow 4s infinite ease-in-out;
   display: flex;
   align-items: center;
   justify-content: center;
