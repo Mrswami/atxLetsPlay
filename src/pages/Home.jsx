@@ -18,6 +18,20 @@ export default function Home() {
   const [viewMode, setViewMode] = useState('street'); // 'street' | 'dashboard'
   const [courts, setCourts] = useState(AUSTIN_COURTS_DATA || []);
   const [showCourtSelect, setShowCourtSelect] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const handleCallNext = () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    const userHostedGames = gamesList.filter(g => g.hostId === user.uid && g.status === 'open');
+    if (userHostedGames.length >= 2) {
+      setToast({ type: 'error', message: 'You can only host a max of 2 active pickup games. Finish one first!' });
+      return;
+    }
+    setShowCourtSelect(true);
+  };
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [suggestForm, setSuggestForm] = useState({ name: '', location: '', sport: 'Basketball', notes: '' });
 
@@ -173,6 +187,16 @@ export default function Home() {
         </div>
       )}
 
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`settings-toast toast-${toast.type} anim-fade-in`} style={{ zIndex: 9999 }}>
+          <span className="toast-icon">
+            {toast.type === 'success' ? '✓' : toast.type === 'error' ? '⚠️' : 'ℹ️'}
+          </span>
+          <span className="toast-msg">{toast.message}</span>
+        </div>
+      )}
+
       {/* ── 2. DASHBOARD LAYER ── */}
       <div className={`dashboard-layer ${viewMode === 'dashboard' ? 'visible' : 'hidden'}`}>
         {/* Search overlay backdrop */}
@@ -292,7 +316,7 @@ export default function Home() {
           <button
             className="action-btn action-btn--create"
             id="create-game-button"
-            onClick={() => user ? setShowCourtSelect(true) : navigate('/login')}
+            onClick={handleCallNext}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
@@ -334,6 +358,39 @@ export default function Home() {
           >
             💡 Suggest a New Court
           </button>
+        </div>
+
+        {/* Venmo-style Social Activity Feed */}
+        <div className="home-activity-feed">
+          <div className="haf-header">
+            <h3>🌐 ATX Live Feed</h3>
+          </div>
+          <div className="haf-list">
+            {gamesList.length === 0 ? (
+              <div className="haf-empty">No active games right now. Call Next to start one!</div>
+            ) : (
+              gamesList.slice(0, 10).map((game) => {
+                const court = AUSTIN_COURTS_DATA.find((c) => c.id === game.courtId);
+                const sm = SPORT_META[game.sport] || SPORT_META['basketball'];
+                const scheduledDate = game.scheduledTime ? new Date(game.scheduledTime) : new Date();
+                
+                return (
+                  <div key={game.id} className="haf-item" onClick={() => navigate(`/court/${game.courtId}`)}>
+                    <Avatar url={game.hostAvatarUrl} name={game.hostName} size="small" />
+                    <div className="haf-content">
+                      <p>
+                        <strong>{game.hostName || 'A player'}</strong> is hosting a {sm.emoji} <strong>{sm.label}</strong> pickup game at <strong>{court?.name || 'a court'}</strong>.
+                      </p>
+                      <span className="haf-time">
+                        {scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {game.players && game.players.length > 1 && ` · ${game.players.length} players joined`}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
 
       </div>
