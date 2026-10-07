@@ -72,7 +72,7 @@ export default function Profile() {
     <div className="profile-page">
       {/* Header Navigation */}
       <header className="profile-header">
-        <button className="profile-back-btn" onClick={() => navigate(-1)} aria-label="Go back">
+        <button className="profile-back-btn" onClick={() => navigate('/')} aria-label="Go home">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="15 18 9 12 15 6" />
           </svg>

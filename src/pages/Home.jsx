@@ -141,6 +141,25 @@ export default function Home() {
         </button>
       </div>
 
+      {viewMode === 'street' && (
+        user ? (
+          <button 
+            className="overworld-avatar-btn" 
+            onClick={() => navigate(`/profile/${user.uid}`)}
+            aria-label="View Profile"
+          >
+            <Avatar url={avatarUrl} name={displayName} size="medium" xp={0} />
+          </button>
+        ) : (
+          <button 
+            className="overworld-login-btn" 
+            onClick={() => navigate('/login')}
+          >
+            Sign In
+          </button>
+        )
+      )}
+
       {/* ── 1. REAL STREET & TERRAIN MAP (MATCHING REFERENCE IMAGE) ── */}
       {viewMode === 'street' && (
         <div className="street-map-fullscreen">

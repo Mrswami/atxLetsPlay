@@ -547,7 +547,7 @@ export default function Settings() {
 
       {/* Top Header */}
       <header className="settings-header">
-        <button className="back-btn" onClick={() => navigate(-1)} aria-label="Go back">
+        <button className="back-btn" onClick={() => navigate('/')} aria-label="Go home">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polyline points="15 18 9 12 15 6" />
           </svg>
