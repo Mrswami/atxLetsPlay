@@ -1,17 +1,17 @@
-﻿// ATX Let's Play â€” Court data (client-safe, comprehensive Austin sports courts)
+// ATX Let's Play — Court data (client-safe, comprehensive Austin sports courts)
 // Covers all key Austin neighborhoods: Wampus, Hyde Park, Tarrytown, Cherrywood,
 // Windsor, Mueller, Downtown, Zilker, E Cesar Chavez, and South/290.
 
 export const SPORT_META = {
-  basketball: { label: 'Basketball', emoji: 'ðŸ€', color: '#f97316' },
-  tennis: { label: 'Tennis', emoji: 'ðŸŽ¾', color: '#eab308' },
-  pickleball: { label: 'Pickleball', emoji: 'ðŸ“', color: '#06b6d4' },
-  volleyball: { label: 'Volleyball', emoji: 'ðŸ', color: '#8b5cf6' },
-  soccer: { label: 'Soccer', emoji: 'âš½', color: '#22d366' },
-  'disc-golf': { label: 'Disc Golf', emoji: 'ðŸ¥', color: '#10b981' },
-  petanque: { label: 'PÃ©tanque', emoji: 'ðŸ¥Œ', color: '#a78bfa' },
-  baseball: { label: 'Baseball', emoji: 'âš¾', color: '#ef4444' },
-  softball: { label: 'Softball', emoji: 'ðŸ¥Ž', color: '#f43f5e' },
+  basketball: { label: 'Basketball', emoji: '🏀', color: '#f97316' },
+  tennis: { label: 'Tennis', emoji: '🎾', color: '#eab308' },
+  pickleball: { label: 'Pickleball', emoji: '🏓', color: '#06b6d4' },
+  volleyball: { label: 'Volleyball', emoji: '🏐', color: '#8b5cf6' },
+  soccer: { label: 'Soccer', emoji: '⚽', color: '#22d366' },
+  'disc-golf': { label: 'Disc Golf', emoji: '🥏', color: '#10b981' },
+  petanque: { label: 'Pétanque', emoji: '🥌', color: '#a78bfa' },
+  baseball: { label: 'Baseball', emoji: '⚾', color: '#ef4444' },
+  softball: { label: 'Softball', emoji: '🥎', color: '#f43f5e' },
 };
 
 export const DISTRICT_META = {
@@ -33,7 +33,7 @@ export const DISTRICT_META = {
 };
 
 export const AUSTIN_COURTS_DATA = [
-  // â”€â”€ WAMPUS (WEST CAMPUS & UT) â”€â”€
+  // ── WAMPUS (WEST CAMPUS & UT) ──
   {
     id: 'ut-gregory-gym',
     name: 'Gregory Gym Courts',
@@ -107,7 +107,7 @@ export const AUSTIN_COURTS_DATA = [
     googleMapsUrl: 'https://maps.google.com/?q=Adams+Park+Austin+TX',
   },
 
-  // â”€â”€ HYDE PARK â”€â”€
+  // ── HYDE PARK ──
   {
     id: 'shipe-park-tennis',
     name: 'Shipe Park Tennis & Pickleball',
@@ -181,15 +181,15 @@ export const AUSTIN_COURTS_DATA = [
     googleMapsUrl: 'https://maps.google.com/?q=Ramsey+Park+Tennis+Austin',
   },
 
-  // â”€â”€ TARRY (TARRYTOWN & WEST ENFIELD) â”€â”€
+  // ── TARRY (TARRYTOWN & DON BAYLOR) ──
   {
     id: 'tarry-don-baylor',
     name: 'Don Baylor Neighborhood Park Courts',
     shortName: 'Don Baylor',
     district: 'tarry',
     sport: ['tennis', 'basketball'],
-    address: '2000 Enfield Rd, Austin, TX 78703',
-    coords: { lat: 30.2858, lng: -97.7682 },
+    address: '2008 Enfield Rd, Austin, TX 78703',
+    coords: { lat: 30.2828, lng: -97.7667 },
     surface: 'hard',
     lights: true,
     indoor: false,
@@ -198,7 +198,7 @@ export const AUSTIN_COURTS_DATA = [
     courtCount: 2,
     status: 'active',
     description: 'Tarrytown staple along Johnson Creek. Lighted tennis and basketball court in a peaceful, leafy residential canyon.',
-    googleMapsUrl: 'https://maps.google.com/?q=West+Enfield+Neighborhood+Park+Austin',
+    googleMapsUrl: 'https://maps.google.com/?q=Don+Baylor+Neighborhood+Park+Austin',
   },
   {
     id: 'tarry-reed-park',
@@ -219,7 +219,7 @@ export const AUSTIN_COURTS_DATA = [
     googleMapsUrl: 'https://maps.google.com/?q=Reed+Neighborhood+Park+Austin',
   },
 
-  // â”€â”€ CHERRYWOOD â”€â”€
+  // ── CHERRYWOOD ──
   {
     id: 'cherrywood-patterson-park',
     name: 'Patterson Park Tennis & Basketball',
@@ -257,7 +257,7 @@ export const AUSTIN_COURTS_DATA = [
     googleMapsUrl: 'https://maps.google.com/?q=Alamo+Pocket+Park+Austin',
   },
 
-  // â”€â”€ WINDSOR (WINDSOR PARK) â”€â”€
+  // ── WINDSOR (WINDSOR PARK) ──
   {
     id: 'windsor-bartholomew-park',
     name: 'Bartholomew District Park',
@@ -295,7 +295,7 @@ export const AUSTIN_COURTS_DATA = [
     googleMapsUrl: 'https://maps.google.com/?q=Dottie+Jordan+Neighborhood+Park+Austin',
   },
 
-  // â”€â”€ MUELLER â”€â”€
+  // ── MUELLER ──
   {
     id: 'mueller-browning-hangar',
     name: 'Browning Hangar PActanque Court',
@@ -334,8 +334,8 @@ export const AUSTIN_COURTS_DATA = [
   },
   {
     id: 'mueller-petanque',
-    name: 'Mueller Park PÃ©tanque Court',
-    shortName: 'Mueller PÃ©tanque',
+    name: 'Mueller Park Pétanque Court',
+    shortName: 'Mueller Pétanque',
     district: 'mueller',
     sport: ['petanque'],
     address: 'Mueller Lake Park, Austin, TX 78723',
@@ -347,7 +347,7 @@ export const AUSTIN_COURTS_DATA = [
     amenities: ['nearby restrooms', 'parking', 'shade trees', 'lake view'],
     courtCount: 2,
     status: 'active',
-    description: "Two dedicated pÃ©tanque courts at Mueller Lake Park. One of Austin's finest boules venues with a beautiful lake backdrop.",
+    description: "Two dedicated pétanque courts at Mueller Lake Park. One of Austin's finest boules venues with a beautiful lake backdrop.",
     googleMapsUrl: 'https://maps.google.com/?q=Mueller+Lake+Park+Petanque+Austin+TX',
   },
   {
@@ -387,7 +387,7 @@ export const AUSTIN_COURTS_DATA = [
     googleMapsUrl: 'https://maps.google.com/?q=John+Gaines+Park+Mueller+Austin',
   },
 
-  // â”€â”€ DOWNTOWN â”€â”€
+  // ── DOWNTOWN ──
   {
     id: 'austin-high-tennis',
     name: 'Austin High Tennis Center',
@@ -443,7 +443,7 @@ export const AUSTIN_COURTS_DATA = [
     googleMapsUrl: 'https://maps.google.com/?q=Town+Lake+YMCA+Austin',
   },
 
-  // â”€â”€ ZILKER & RIVER â”€â”€
+  // ── ZILKER & RIVER ──
   {
     id: 'zilker-volleyball',
     name: 'Zilker Park Sand Volleyball',
@@ -499,7 +499,7 @@ export const AUSTIN_COURTS_DATA = [
     googleMapsUrl: 'https://maps.google.com/?q=Deep+Eddy+Park+Austin+TX',
   },
 
-  // â”€â”€ E CESAR CHAVEZ â”€â”€
+  // ── E CESAR CHAVEZ ──
   {
     id: 'cesar-chavez-metz-park',
     name: 'Metz Neighborhood Park Courts',
@@ -555,7 +555,7 @@ export const AUSTIN_COURTS_DATA = [
     googleMapsUrl: 'https://maps.google.com/?q=Parque+Zaragoza+Austin',
   },
 
-  // â”€â”€ SOUTH AUSTIN / HWY 290 â”€â”€
+  // ── SOUTH AUSTIN / HWY 290 ──
   {
     id: 'south-austin-tennis-center',
     name: 'South Austin Tennis Center',
@@ -611,7 +611,7 @@ export const AUSTIN_COURTS_DATA = [
     googleMapsUrl: 'https://maps.google.com/?q=Joslin+Neighborhood+Park+Austin',
   },
 
-  // â”€â”€ HIGH-TRAFFIC EXPANSION VENUES (PICKLEBALL, VOLLEYBALL, INDOOR HOOPS) â”€â”€
+  // ── HIGH-TRAFFIC EXPANSION VENUES (PICKLEBALL, VOLLEYBALL, INDOOR HOOPS) ──
   {
     id: 'bouldin-acres-south-lamar',
     name: 'Bouldin Acres (South Lamar)',
@@ -632,8 +632,8 @@ export const AUSTIN_COURTS_DATA = [
   },
   {
     id: 'woolys-beach-atx',
-    name: 'Woolyâ€™s Beach ATX',
-    shortName: 'Woolyâ€™s Beach',
+    name: 'Wooly’s Beach ATX',
+    shortName: 'Wooly’s Beach',
     district: 'south-congress',
     sport: ['volleyball'],
     address: '514 E St Elmo Rd, Austin, TX 78745',

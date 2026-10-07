@@ -26,8 +26,8 @@ export default function Home() {
       return;
     }
     const userHostedGames = gamesList.filter(g => g.hostId === user.uid && g.status === 'open');
-    if (userHostedGames.length >= 2) {
-      setToast({ type: 'error', message: 'You can only host a max of 2 active pickup games. Finish one first!' });
+    if (userHostedGames.length >= 5) {
+      setToast({ type: 'error', message: 'You have reached the daily limit of 5 hosted games.' });
       return;
     }
     setShowCourtSelect(true);
