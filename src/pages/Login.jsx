@@ -54,7 +54,11 @@ export default function Login() {
       await loginWithGoogle();
       navigate(redirectTo);
     } catch (err) {
-      setError(err.message?.replace('Firebase: ', '') || 'Google sign-in failed');
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/web-storage-unsupported' || err.code === 'auth/popup-blocked') {
+        setError('Google Sign-In was blocked. If you are on Firefox or Safari Mobile, please tap the browser shield/AA icon and disable "Tracking Protection", or try Email Sign-In.');
+      } else {
+        setError(err.message?.replace('Firebase: ', '') || 'Google sign-in failed');
+      }
     }
     setLoading(false);
   }
