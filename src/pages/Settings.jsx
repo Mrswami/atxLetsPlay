@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { SPORT_META, DISTRICT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
+import NotificationPrefsCard from '../components/NotificationPrefsCard';
 import './Settings.css';
 
 // Curated Austin Sports Avatar Presets
@@ -1273,6 +1274,7 @@ export default function Settings() {
          ══════════════════════════════════════════ */}
       {activeTab === 'notifications' && (
         <div className="settings-tab-content anim-fade-in">
+          <NotificationPrefsCard onToast={triggerToast} />
           <section className="settings-card">
             <div className="card-header">
               <h2 className="card-title">Austin Court Alerts</h2>
@@ -1288,7 +1290,7 @@ export default function Settings() {
                 <input
                   type="checkbox"
                   checked={pickupAlerts}
-                  onChange={(e) => { (e.target.checked); setTimeout(handleSaveChanges, 50); }}
+                  onChange={(e) => { setPickupAlerts(e.target.checked); updateUserProfile({ pickupAlerts: e.target.checked }); }}
                 />
                 <span className="toggle-slider" />
               </label>
@@ -1303,7 +1305,7 @@ export default function Settings() {
                 <input
                   type="checkbox"
                   checked={gameInvites}
-                  onChange={(e) => { (e.target.checked); setTimeout(handleSaveChanges, 50); }}
+                  onChange={(e) => { setGameInvites(e.target.checked); updateUserProfile({ gameInvites: e.target.checked }); }}
                 />
                 <span className="toggle-slider" />
               </label>
@@ -1325,7 +1327,7 @@ export default function Settings() {
                 <input
                   type="checkbox"
                   checked={onCourtStatus}
-                  onChange={(e) => { (e.target.checked); setTimeout(handleSaveChanges, 50); }}
+                  onChange={(e) => { setOnCourtStatus(e.target.checked); updateUserProfile({ onCourtStatus: e.target.checked }); }}
                 />
                 <span className="toggle-slider" />
               </label>
@@ -1340,7 +1342,7 @@ export default function Settings() {
                 <input
                   type="checkbox"
                   checked={publicProfile}
-                  onChange={(e) => { (e.target.checked); setTimeout(handleSaveChanges, 50); }}
+                  onChange={(e) => { setPublicProfile(e.target.checked); updateUserProfile({ publicProfile: e.target.checked }); }}
                 />
                 <span className="toggle-slider" />
               </label>

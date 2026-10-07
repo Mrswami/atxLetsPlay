@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, getDocs, orderBy, doc, getDoc, onSnapshot, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { AUSTIN_COURTS_DATA } from '../data/courtsMeta';
+import { assertCanParticipate, assertReliable } from '../services/safety';
+import { useBlocked } from './useBlocked';
 
 // ─── Fetch all courts for a specific district ─────────────────────────────────
 export function useDistrictCourts(districtId) {
@@ -100,7 +102,9 @@ export function useCourtGames(courtId) {
     return () => unsubscribe();
   }, [courtId]);
 
-  return { games, loading };
+  const blocked = useBlocked();
+  const visible = useMemo(() => games.filter((g) => !blocked.has(g.createdBy)), [games, blocked]);
+  return { games: visible, loading };
 }
 
 // ─── Fetch all active/open games across Austin (Real-time) ───────────────────
@@ -136,11 +140,16 @@ export function useAllActiveGames() {
     return () => unsubscribe();
   }, []);
 
-  return { activeGames, gamesList, loading };
+  const blocked = useBlocked();
+  const visibleList = useMemo(() => gamesList.filter((g) => !blocked.has(g.createdBy)), [gamesList, blocked]);
+  return { activeGames, gamesList: visibleList, loading };
 }
 
 // ─── Join Game Transaction ──────────────────────────────────────────────────
 export async function joinGame(gameId, userId) {
+  // Trust & safety gates: verified email + not paused for repeated no-shows
+  assertCanParticipate();
+  await assertReliable(userId);
   const gameRef = doc(db, 'games', gameId);
   return runTransaction(db, async (transaction) => {
     const gameDoc = await transaction.get(gameRef);

@@ -82,3 +82,70 @@ exports.onImageUpload = onObjectFinalized({ bucket: "atxletsplay.firebasestorage
 });
 
 
+
+
+// ─── Game reminders (push / email / SMS) ─────────────────────────────────────
+// Runs every 5 minutes; reminds players ~1 hour before a game, honouring each user's
+// notificationPrefs. Email uses the Firebase "Trigger Email" extension (collection: mail);
+// SMS uses a Twilio-style extension (collection: messages). Both are no-ops until installed.
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+
+exports.sendGameReminders = onSchedule("every 5 minutes", async () => {
+  const db = admin.firestore();
+  const now = Date.now();
+  const from = admin.firestore.Timestamp.fromMillis(now + 55 * 60000);
+  const to = admin.firestore.Timestamp.fromMillis(now + 65 * 60000);
+
+  const games = await db.collection("games")
+    .where("scheduledTime", ">=", from)
+    .where("scheduledTime", "<=", to)
+    .get();
+
+  for (const g of games.docs) {
+    const game = g.data();
+    if (game.reminderSent || !["open", "full"].includes(game.status)) continue;
+
+    const when = game.scheduledTime.toDate().toLocaleTimeString("en-US", {
+      hour: "numeric", minute: "2-digit", timeZone: "America/Chicago",
+    });
+    const title = "Game starts in about an hour";
+    const body = `${game.sport} at ${game.courtName} · ${when}`;
+    const url = `/court/${game.courtId}`;
+
+    for (const uid of game.currentPlayers || []) {
+      const uSnap = await db.collection("users").doc(uid).get();
+      if (!uSnap.exists) continue;
+      const u = uSnap.data();
+      const prefs = u.notificationPrefs || {};
+      const ch = { push: false, email: true, sms: false, ...(prefs.channels || {}) };
+      const gameRemindersOn = (prefs.events || {}).gameReminders !== false;
+      if (!gameRemindersOn) continue;
+
+      if (ch.push) {
+        const devices = await db.collection("users").doc(uid).collection("devices").get();
+        const tokens = devices.docs.map((d) => d.id);
+        if (tokens.length) {
+          const res = await admin.messaging().sendEachForMulticast({
+            tokens, notification: { title, body }, data: { url },
+          });
+          // Clean up dead tokens
+          res.responses.forEach((r, i) => {
+            if (!r.success && /registration-token-not-registered|invalid-argument/.test(r.error?.code || "")) {
+              devices.docs[i].ref.delete().catch(() => {});
+            }
+          });
+        }
+      }
+      if (ch.email && u.email) {
+        await db.collection("mail").add({
+          to: u.email,
+          message: { subject: `${title}: ${game.courtName}`, text: `${body}\nOpen: https://atxletsplay.web.app${url}` },
+        });
+      }
+      if (ch.sms && prefs.phone) {
+        await db.collection("messages").add({ to: prefs.phone, body: `ATX Let's Play: ${body}. Reply STOP to opt out.` });
+      }
+    }
+    await g.ref.update({ reminderSent: true });
+  }
+});

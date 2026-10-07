@@ -19,6 +19,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, deleteDoc, serverTimestamp, onSnapshot, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
+import { sendVerification, refreshVerification } from '../services/safety';
 
 const AuthContext = createContext(null);
 
@@ -33,6 +34,18 @@ export function AuthProvider({ children }) {
   const [userProfile, setUserProfile] = useState(null);
   const [isGuest, setIsGuest] = useState(() => localStorage.getItem('atx_is_guest') === 'true');
   const [loading, setLoading] = useState(true);
+  const [emailVerified, setEmailVerified] = useState(false);
+
+  async function resendVerification() {
+    await sendVerification();
+  }
+
+  // Reload the Firebase user + ID token so Firestore rules pick up email_verified.
+  async function checkEmailVerified() {
+    const ok = await refreshVerification();
+    setEmailVerified(ok);
+    return ok;
+  }
 
   // ─── MAGIC LINK LOGIC ───
   const actionCodeSettings = {
@@ -134,6 +147,7 @@ export function AuthProvider({ children }) {
       if (firebaseUser) {
         setUser(firebaseUser);
         setIsGuest(firebaseUser.isAnonymous);
+        setEmailVerified(!firebaseUser.isAnonymous && !!firebaseUser.emailVerified);
         const profileRef = doc(db, 'users', firebaseUser.uid);
         
         unsubProfile = onSnapshot(profileRef, async (snap) => {
@@ -211,6 +225,7 @@ export function AuthProvider({ children }) {
       hasCompletedOnboarding: false,
       createdAt: serverTimestamp(),
     });
+    sendVerification().catch((e) => console.warn('Verification email not sent:', e));
     setIsGuest(false);
     return cred.user;
   }
@@ -424,6 +439,9 @@ export function AuthProvider({ children }) {
     userProfile,
     isGuest,
     loading,
+    emailVerified,
+    resendVerification,
+    checkEmailVerified,
     signup,
     login,
     loginWithGoogle,

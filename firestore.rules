@@ -2,6 +2,13 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Verified = signed in with a non-anonymous, email-verified account (Google/magic-link are verified automatically)
+    function verified() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
     match /users/{userId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == userId;
@@ -14,6 +21,16 @@ service cloud.firestore {
             && (!('lastUsernameChange' in resource.data) || resource.data.lastUsernameChange < request.time - duration.value(14, 'd'))
           )
         );
+
+      // Users the owner has blocked (private to the owner)
+      match /blocks/{blockedUid} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Push tokens (private to the owner)
+      match /devices/{token} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
     
     match /usernames/{username} {
@@ -22,14 +39,23 @@ service cloud.firestore {
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
-    // Allow reading games (everyone can see, only creator or player joining/leaving can update)
+    // Reports: any signed-in user can file one about someone else; only admins (console / Admin SDK) can read or edit.
+    match /reports/{reportId} {
+      allow create: if request.auth != null
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.targetId != request.auth.uid
+        && request.resource.data.status == 'open';
+      allow read, update, delete: if false;
+    }
+
+    // Reading games is public. Creating and joining require a verified account.
     match /games/{gameId} {
       allow read: if true;
-      allow create: if request.auth != null;
+      allow create: if verified() && request.resource.data.createdBy == request.auth.uid;
       allow update: if request.auth != null && (
         resource.data.createdBy == request.auth.uid ||
         resource.data.creatorId == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['currentPlayers', 'status'])
+        (verified() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['currentPlayers', 'status']))
       );
       allow delete: if request.auth != null && (
         resource.data.createdBy == request.auth.uid ||
@@ -44,4 +70,3 @@ service cloud.firestore {
     }
   }
 }
-

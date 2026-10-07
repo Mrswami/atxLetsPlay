@@ -6,12 +6,14 @@ import { db } from '../firebase/config';
 import { collection, addDoc, serverTimestamp, Timestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { SPORT_META } from '../data/courtsMeta';
 import Loading from '../components/Loading';
+import VerifyEmailBanner from '../components/VerifyEmailBanner';
+import { assertCanParticipate, assertReliable } from '../services/safety';
 import './CreateGame.css';
 
 export default function CreateGame() {
   const { courtId } = useParams();
   const navigate = useNavigate();
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, emailVerified } = useAuth();
   const { court, loading: courtLoading, error: courtError } = useCourt(courtId);
 
   const [sport, setSport] = useState('');
@@ -58,6 +60,9 @@ export default function CreateGame() {
     setError('');
 
     try {
+      assertCanParticipate();
+      await assertReliable(user.uid);
+
       const parsedMax = parseInt(maxPlayers, 10);
       if (isNaN(parsedMax) || parsedMax <= 1) {
         throw new Error('Please enter a valid number of players (minimum 2).');
@@ -162,6 +167,7 @@ export default function CreateGame() {
 
         <form className="cg-form" onSubmit={handleSubmit}>
           {error && <div className="cg-form-error">{error}</div>}
+          <VerifyEmailBanner />
 
           {/* Sport Selection */}
           <div className="form-group">
@@ -265,7 +271,7 @@ export default function CreateGame() {
           <button
             type="submit"
             className="cg-submit-btn"
-            disabled={submitting}
+            disabled={submitting || !emailVerified}
             id="cg-submit-button"
           >
             {submitting ? 'Creating...' : 'POST pickup game'}

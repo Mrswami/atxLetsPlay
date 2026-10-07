@@ -36,3 +36,5 @@ Artifacts (like this document) are short-to-medium-term memory. They belong in t
 
 ### D. Codebase as the Truth
 Ultimately, the most robust memory is well-structured code. By organizing our data (e.g., `courtsMeta.js`), standardizing asset paths (`characters_v1`), and keeping pure components, the codebase self-documents its state, minimizing the context you have to explain to me.
+
+- **Trust & safety (batch 3):** email-verification gate (client + Firestore rules), report/block, no-show attendance + reliability %, notification channel/event preferences, FCM groundwork + scheduled reminder function. Also fixed Alerts toggles whose state setters were missing (an earlier regex patch had silently stripped them).

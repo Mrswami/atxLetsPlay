@@ -4,6 +4,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
 import { SPORT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
+import { getNoShowStats, reportUser, blockUser, unblockUser, REPORT_REASONS } from '../services/safety';
+import { useBlocked } from '../hooks/useBlocked';
 import './Profile.css';
 
 export default function Profile() {
@@ -41,6 +43,37 @@ export default function Profile() {
   }, [uid, isOwnProfile]);
 
   const profile = isOwnProfile ? userProfile : targetProfile;
+
+  // Reliability + report/block
+  const subjectUid = isOwnProfile ? user?.uid : uid;
+  const blocked = useBlocked();
+  const isBlocked = !!uid && blocked.has(uid);
+  const [stats, setStats] = useState(null);
+  const [showReport, setShowReport] = useState(false);
+  const [reportReason, setReportReason] = useState('harassment');
+  const [reportDetails, setReportDetails] = useState('');
+  const [safetyMsg, setSafetyMsg] = useState('');
+
+  useEffect(() => {
+    if (!subjectUid || String(subjectUid).startsWith('guest-')) return;
+    getNoShowStats(subjectUid).then(setStats).catch(() => setStats(null));
+  }, [subjectUid]);
+
+  async function submitReport() {
+    try {
+      await reportUser(uid, reportReason, reportDetails);
+      setShowReport(false);
+      setReportDetails('');
+      setSafetyMsg('Report sent. Our team will review it.');
+    } catch (e) { setSafetyMsg(e.message); }
+  }
+
+  async function toggleBlock() {
+    try {
+      if (isBlocked) { await unblockUser(uid); setSafetyMsg('User unblocked.'); }
+      else { await blockUser(uid); setSafetyMsg('User blocked. You will no longer see their games.'); }
+    } catch (e) { setSafetyMsg(e.message); }
+  }
 
 
   const displayName = profile?.displayName || user?.displayName || 'Player';
@@ -152,9 +185,31 @@ export default function Profile() {
             <span className="stat-num">{profile?.rep ? `${profile.rep.toFixed(1)}★` : '5.0★'}</span>
             <span className="stat-label">Rep Rating</span>
           </div>
+          <div className="stat-card" id="reliability-stat">
+            <span className="stat-num">{stats?.reliability != null ? `${stats.reliability}%` : 'New'}</span>
+            <span className="stat-label">Reliability</span>
+          </div>
         </div>
 
-        {/* Sport Preferences */}
+        {!isOwnProfile && user && !user.isAnonymous && (
+          <div className="profile-section" id="safety-actions">
+            <h3>Safety</h3>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="profile-edit-btn" onClick={toggleBlock}>{isBlocked ? 'Unblock' : '🚫 Block'}</button>
+              <button className="profile-edit-btn" onClick={() => setShowReport((v) => !v)}>🚩 Report</button>
+            </div>
+            {showReport && (
+              <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+                <select value={reportReason} onChange={(e) => setReportReason(e.target.value)}>
+                  {REPORT_REASONS.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+                </select>
+                <textarea rows="3" maxLength="500" placeholder="What happened? (optional)" value={reportDetails} onChange={(e) => setReportDetails(e.target.value)} />
+                <button className="profile-edit-btn" onClick={submitReport}>Submit report</button>
+              </div>
+            )}
+            {safetyMsg && <p style={{ marginTop: 8 }}>{safetyMsg}</p>}
+          </div>
+        )}
         <div className="profile-section">
           <h3>Sport Preferences</h3>
           <div className="profile-sports-tags">

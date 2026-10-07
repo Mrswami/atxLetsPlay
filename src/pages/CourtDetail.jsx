@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useCourt, useCourtGames, joinGame, leaveGame } from '../hooks/useCourts';
+import NoShowPanel from '../components/NoShowPanel';
 import { useAuth } from '../contexts/AuthContext';
 import { SPORT_META, getCartoonImageUrl } from '../data/courtsMeta';
 import Loading from '../components/Loading';
@@ -295,6 +296,9 @@ function GameCard({ game, userId, onAction }) {
       >
         {isJoined ? 'LEAVE GAME' : spotsLeft === 0 ? 'FULL' : 'I GOT NEXT'}
       </button>
+      {game.createdBy === userId && scheduledDate && scheduledDate.getTime() <= Date.now() && (
+        <NoShowPanel game={game} hostId={userId} />
+      )}
     </div>
   );
 }

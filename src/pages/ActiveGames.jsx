@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAllActiveGames, joinGame, leaveGame } from '../hooks/useCourts';
 import { SPORT_META } from '../data/courtsMeta';
 import Loading from '../components/Loading';
+import VerifyEmailBanner from '../components/VerifyEmailBanner';
 import './ActiveGames.css';
 
 export default function ActiveGames() {
@@ -102,6 +103,7 @@ export default function ActiveGames() {
 
       {/* Error alert */}
       {actionError && <div className="ag-action-error">{actionError}</div>}
+      <div style={{ padding: '0 1rem' }}><VerifyEmailBanner /></div>
 
       {/* Games List */}
       <div className="ag-list">
