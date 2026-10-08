@@ -59,6 +59,10 @@ function ProtectedRoute({ children }) {
 }
 
 export default function AppRouter() {
+  const { loading } = useAuth();
+  
+  if (loading) return <Loading />;
+
   return (
     <BrowserRouter>
       <Routes>
