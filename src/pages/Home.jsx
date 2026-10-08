@@ -11,7 +11,7 @@ import { db } from '../firebase/config';
 import './Home.css';
 
 export default function Home() {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, isGuest } = useAuth();
   const navigate = useNavigate();
   const containerRef = useRef(null);
   // Default to real street/terrain map view matching user's reference map
