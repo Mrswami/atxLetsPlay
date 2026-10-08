@@ -195,10 +195,14 @@ export async function leaveGame(gameId, userId) {
 
     const updatedPlayers = current.filter((id) => id !== userId);
 
-    transaction.update(gameRef, {
-      currentPlayers: updatedPlayers,
-      status: 'open', // Always opens up since it has one less player
-    });
+    if (updatedPlayers.length === 0) {
+      transaction.delete(gameRef);
+    } else {
+      transaction.update(gameRef, {
+        currentPlayers: updatedPlayers,
+        status: 'open', // Always opens up since it has one less player
+      });
+    }
   });
 }
 
