@@ -16,7 +16,7 @@ service cloud.firestore {
         (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['username', 'lastUsernameChange']) 
           || (
-            request.resource.data.username != resource.data.username
+            request.resource.data.username != resource.data.get('username', '')
             && request.resource.data.lastUsernameChange == request.time
             && (!('lastUsernameChange' in resource.data) || resource.data.lastUsernameChange < request.time - duration.value(14, 'd'))
           )
