@@ -75,10 +75,21 @@ export default function LiveGame() {
     }
   };
 
+  const handleCancelGame = async () => {
+    if (window.confirm("Are you sure you want to cancel this game? Players won't be able to join.")) {
+      try {
+        await updateDoc(doc(db, 'games', gameId), { status: 'cancelled' });
+      } catch (e) {
+        console.error("Failed to cancel", e);
+      }
+    }
+  };
+
   if (!game) return <div className="live-game-loading">Loading live stream...</div>;
 
   const scheduledDate = game.scheduledTime ? game.scheduledTime.toDate() : new Date();
   const isOver = scheduledDate.getTime() <= Date.now() - (2 * 60 * 60 * 1000);
+  const isCancelled = game.status === 'cancelled';
   const homeScore = game.score?.home || 0;
   const awayScore = game.score?.away || 0;
   const isHost = user?.uid === game.createdBy || user?.uid === game.creatorId;
@@ -93,7 +104,9 @@ export default function LiveGame() {
         </button>
         <div className="lg-header-info">
           <h2>{game.courtName}</h2>
-          {isOver ? (
+          {isCancelled ? (
+            <span className="lg-live-badge" style={{ color: 'var(--accent-danger)', animation: 'none' }}>CANCELLED</span>
+          ) : isOver ? (
             <span className="lg-live-badge" style={{ color: 'var(--text-secondary)', animation: 'none' }}>ENDED</span>
           ) : (
             <span className="lg-live-badge">● LIVE</span>
@@ -152,7 +165,7 @@ export default function LiveGame() {
           <div ref={chatEndRef} />
         </div>
         
-        {!isOver && (
+        {!isOver && !isCancelled && (
           <div className="lg-chat-actions">
             <form onSubmit={handleSendChat} className="lg-chat-form">
               <input 
@@ -168,6 +181,15 @@ export default function LiveGame() {
             </form>
             <button type="button" className="lg-heart-btn" onClick={handleSendHeart}>
                ❤️
+            </button>
+          </div>
+        )}
+        {isHost && !isOver && !isCancelled && (
+          <div style={{ padding: '10px 16px', background: 'var(--surface-base)' }}>
+            <button 
+              onClick={handleCancelGame} 
+              style={{ width: '100%', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', fontWeight: 'bold' }}>
+              Cancel Game
             </button>
           </div>
         )}

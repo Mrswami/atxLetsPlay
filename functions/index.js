@@ -149,3 +149,54 @@ exports.sendGameReminders = onSchedule("every 5 minutes", async () => {
     await g.ref.update({ reminderSent: true });
   }
 });
+
+
+// ─── Auto-close abandoned games ───────────────────────────────────────────────
+exports.cleanAbandonedGames = onSchedule("every 1 hours", async () => {
+  const db = admin.firestore();
+  // Games older than 3 hours
+  const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - 3 * 60 * 60 * 1000);
+  
+  const games = await db.collection("games")
+    .where("status", "in", ["open", "full"])
+    .where("scheduledTime", "<", cutoff)
+    .get();
+
+  const batch = db.batch();
+  let count = 0;
+  for (const g of games.docs) {
+    batch.update(g.ref, { status: "completed", autoClosed: true });
+    count++;
+    if (count === 500) {
+      await batch.commit();
+      count = 0;
+    }
+  }
+  if (count > 0) {
+    await batch.commit();
+  }
+  console.log(`Cleaned up ${games.docs.length} abandoned games.`);
+});
+
+
+// ─── Chat Spam & Profanity Filter ─────────────────────────────────────────────
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+
+const PROFANITY_LIST = ["fuck", "shit", "bitch", "asshole", "cunt", "nigger", "faggot", "dick", "pussy"];
+
+exports.filterChatMessages = onDocumentCreated("games/{gameId}/chat/{messageId}", async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) return;
+
+  const data = snapshot.data();
+  const text = (data.text || "").toLowerCase();
+
+  // Basic profanity check
+  const hasProfanity = PROFANITY_LIST.some(badWord => text.includes(badWord));
+
+  if (hasProfanity) {
+    console.log(`[Moderation] Filtered message ${snapshot.id} in game ${event.params.gameId}`);
+    // Delete the message entirely
+    await snapshot.ref.delete();
+  }
+});
