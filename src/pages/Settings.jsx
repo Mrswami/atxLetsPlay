@@ -118,7 +118,9 @@ export default function Settings() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
 
-  
+  // Baseline tracking for dirty detection
+  const [initialState, setInitialState] = useState(null);
+
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState(null);
 
@@ -166,10 +168,6 @@ export default function Settings() {
   // Saving / Toast state
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
-
-  // Baseline tracking for dirty detection
-  const [initialState, setInitialState] = useState(null);
-
   // Sync initial state from user / userProfile
   useEffect(() => {
     const profile = userProfile || {};
