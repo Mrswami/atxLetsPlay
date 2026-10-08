@@ -126,7 +126,7 @@ export default function Profile() {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
           <button 
             className="action-btn" 
-            style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', background: 'var(--surface-elevated)', border: '1px solid var(--glass-border)' }}
+            style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', background: 'var(--surface-elevated)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}
             onClick={() => navigate('/', { state: { viewMode: 'dashboard' } })}
           >
             <span>📊</span> Go to Live Dashboard
