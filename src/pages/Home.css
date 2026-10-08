@@ -117,6 +117,14 @@
 }
 
 /* â”€â”€â”€ Avatar button wrapper â”€â”€â”€ */
+.home-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
 .home-avatar-btn {
   background: transparent;
   border: none;
@@ -132,6 +140,59 @@
 
 .home-avatar-btn:active {
   transform: scale(0.95);
+}
+
+.home-avatar-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  margin-top: 0.2rem;
+}
+
+.home-display-name {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.home-username {
+  font-size: 0.95rem;
+  color: var(--accent-secondary);
+  font-weight: 700;
+}
+
+.home-guest-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  padding: 0.85rem 1.25rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.25rem;
+}
+
+.home-guest-prompt:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.home-guest-prompt p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.home-guest-prompt span {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-primary);
 }
 
 /* â”€â”€â”€ Utility row â”€â”€â”€ */

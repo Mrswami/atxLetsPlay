@@ -298,14 +298,32 @@ export default function Home() {
           )}
         </div>
 
-        {/* Avatar */}
-        <button
-          className="home-avatar-btn"
-          onClick={() => user ? navigate(`/profile/${user.uid}`) : navigate('/login')}
-          aria-label="View profile"
-        >
-          <Avatar url={avatarUrl} name={displayName} size="large" xp={0} />
-        </button>
+        {/* Avatar Section */}
+        <div className="home-avatar-section">
+          <button
+            className="home-avatar-btn"
+            onClick={() => user ? navigate(`/profile/${user.uid}`) : navigate('/login')}
+            aria-label="View profile"
+          >
+            <Avatar url={avatarUrl} name={displayName} size="large" xp={0} />
+          </button>
+          
+          {user && !isGuest ? (
+            <div className="home-avatar-info">
+              {userProfile?.displayName ? (
+                <div className="home-display-name">{userProfile.displayName}</div>
+              ) : null}
+              {userProfile?.username ? (
+                <div className="home-username">@{userProfile.username}</div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="home-guest-prompt" onClick={() => navigate('/login')}>
+              <p>Want to track stats and make friends?</p>
+              <span>Sign in / Sign up</span>
+            </div>
+          )}
+        </div>
 
         {/* Utility row */}
         <div className="home-utility-row">
