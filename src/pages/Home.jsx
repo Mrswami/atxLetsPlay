@@ -397,7 +397,7 @@ export default function Home() {
               gamesList.slice(0, 10).map((game) => {
                 const court = AUSTIN_COURTS_DATA.find((c) => c.id === game.courtId);
                 const sm = SPORT_META[game.sport] || SPORT_META['basketball'];
-                const scheduledDate = game.scheduledTime ? new Date(game.scheduledTime) : new Date();
+                const scheduledDate = game.scheduledTime?.toDate ? game.scheduledTime.toDate() : (game.scheduledTime ? new Date(game.scheduledTime) : new Date());
                 const isJoined = user && game.currentPlayers?.includes(user.uid);
                 
                 const isLive = scheduledDate.getTime() <= Date.now() && scheduledDate.getTime() > Date.now() - (2 * 60 * 60 * 1000);
