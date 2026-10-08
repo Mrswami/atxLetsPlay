@@ -42,19 +42,19 @@
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          background: rgba(10, 14, 23, 0.6);
-          padding: 1rem 2rem;
-          border-radius: 12px;
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
+          background: rgba(10, 14, 23, 0.3);
+          padding: 0.5rem 1rem;
+          border-radius: 8px;
+          backdrop-filter: blur(2px);
+          -webkit-backdrop-filter: blur(2px);
           border: 1px solid rgba(255, 255, 255, 0.05);
         }
         .pre-loader-text {
           font-family: sans-serif;
-          font-size: clamp(1.5rem, 6vw, 4rem);
-          font-weight: 900;
-          letter-spacing: clamp(0.05em, 1vw, 0.25em);
-          color: #ffffff;
+          font-size: 1rem;
+          font-weight: normal;
+          letter-spacing: 0.3em;
+          color: rgba(255, 255, 255, 0.6);
           margin: 0;
           text-align: center;
           white-space: nowrap;
@@ -62,7 +62,7 @@
         }
         @keyframes pulse {
           0%, 100% { opacity: 0; }
-          50% { opacity: 1; }
+          50% { opacity: 0.6; }
         }
       </style>
       <div class="pre-loader">
@@ -76,7 +76,7 @@
         <video class="pre-loader-video desktop-video" src="/assets/loadingScreen.mp4" autoplay loop muted playsinline></video>
         <video class="pre-loader-video mobile-video" src="/assets/loadingScreenMobile.mp4" autoplay loop muted playsinline></video>
         <div class="pre-loader-overlay">
-          <p class="pre-loader-text">ATX LETS PLAY</p>
+          <p class="pre-loader-text">LOADING...</p>
         </div>
       </div>
     </div>
