@@ -30,6 +30,7 @@ export default function CreateGame() {
   const [error, setError] = useState('');
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [gamesMadeCount, setGamesMadeCount] = useState(1);
+  const [showPermitInfo, setShowPermitInfo] = useState(false);
 
   // Set default sport when court loads
   useEffect(() => {
@@ -166,9 +167,16 @@ export default function CreateGame() {
         </div>
 
         <div className="cg-permit-warning" style={{ background: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.4)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          <strong>⚠️ Permit Notice:</strong> <br/>
-          If this is an official City of Austin park, you may need a permit for exclusive use. <br/>
-          Contact Austin Parks & Rec Athletics: <a href="mailto:reservations@austintexas.gov" style={{color: 'var(--accent-primary)'}}>reservations@austintexas.gov</a> or call <strong>3-1-1</strong>.
+          <button type="button" onClick={() => setShowPermitInfo(!showPermitInfo)} style={{ background: 'none', border: 'none', color: 'inherit', display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer', padding: 0, fontWeight: 'bold' }}>
+            <span>⚠️ City Parks Permit Notice</span>
+            <span style={{ marginLeft: 'auto' }}>{showPermitInfo ? '▲' : '▼'}</span>
+          </button>
+          {showPermitInfo && (
+            <div style={{ marginTop: '0.5rem', lineHeight: '1.4' }}>
+              If this is an official City of Austin park, you may need a permit for exclusive use. <br/>
+              Contact Austin Parks & Rec Athletics: <a href="mailto:reservations@austintexas.gov" style={{color: 'var(--accent-primary)'}}>reservations@austintexas.gov</a> or call <strong>3-1-1</strong>.
+            </div>
+          )}
         </div>
 
         <form className="cg-form" onSubmit={handleSubmit}>

@@ -17,6 +17,7 @@ export default function CourtDetail() {
   const [viewMode, setViewMode] = useState('info'); // 'info' | '3d' | 'games'
   const [actionError, setActionError] = useState('');
   const [showSubCourts, setShowSubCourts] = useState(false);
+  const [showPermitInfo, setShowPermitInfo] = useState(false);
 
   function handleBack() {
     if (location.state?.fromCreate || window.history.length <= 1) {
@@ -100,10 +101,17 @@ export default function CourtDetail() {
         
         {/* Permit Warning */}
         <div className="cd-permit-warning" style={{ background: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.4)', padding: '0.75rem', borderRadius: '8px', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          <strong>⚠️ City Parks Permit Notice:</strong> <br/>
-          Official reservations may be required for exclusive use, leagues, or large groups at PARD courts. <br/>
-          Contact Austin Parks & Rec Athletics: <br/>
-          Email: <a href="mailto:reservations@austintexas.gov" style={{color: 'var(--accent-primary)'}}>reservations@austintexas.gov</a> | Phone: <strong>3-1-1</strong>
+          <button onClick={() => setShowPermitInfo(!showPermitInfo)} style={{ background: 'none', border: 'none', color: 'inherit', display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer', padding: 0, fontWeight: 'bold' }}>
+            <span>⚠️ City Parks Permit Notice</span>
+            <span style={{ marginLeft: 'auto' }}>{showPermitInfo ? '▲' : '▼'}</span>
+          </button>
+          {showPermitInfo && (
+            <div style={{ marginTop: '0.5rem', lineHeight: '1.4' }}>
+              Official reservations may be required for exclusive use, leagues, or large groups at PARD courts. <br/>
+              Contact Austin Parks & Rec Athletics: <br/>
+              Email: <a href="mailto:reservations@austintexas.gov" style={{color: 'var(--accent-primary)'}}>reservations@austintexas.gov</a> | Phone: <strong>3-1-1</strong>
+            </div>
+          )}
         </div>
       </div>
 
