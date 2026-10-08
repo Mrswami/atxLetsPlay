@@ -16,50 +16,54 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const fakeGuestGames = [
-  {
-    courtId: "zilker-park-volleyball",
-    courtName: "Zilker Park Sand Volleyball",
-    subCourt: "Court 2",
-    district: "south-central",
-    sport: "volleyball",
-    createdBy: "guest-test-1",
-    creatorName: "Austin Volley Fan",
-    hostName: "Austin Volley Fan",
-    hostAvatarUrl: "/assets/characters_v1/preset_teen_chloe.jpg",
-    status: "open",
-    scheduledTime: Timestamp.fromDate(new Date(Date.now() + 1000 * 60 * 15)), // 15 mins from now
-    maxPlayers: 12,
-    currentPlayers: ["guest-test-1", "user1", "user2"],
-    skillLevel: "casual",
-    notes: "Just for fun, bringing a net and extra ball.",
-    createdAt: serverTimestamp(),
-  },
-  {
-    courtId: "clark-field-basketball",
-    courtName: "Clark Field Basketball",
-    district: "downtown",
-    sport: "basketball",
-    createdBy: "guest-test-2",
-    creatorName: "Hoops King",
-    hostName: "Hoops King",
-    hostAvatarUrl: "/assets/characters_v1/preset_adult_amir.jpg",
-    status: "open",
-    scheduledTime: Timestamp.fromDate(new Date(Date.now() + 1000 * 60 * 5)), // 5 mins from now
-    maxPlayers: 10,
-    currentPlayers: ["guest-test-2", "user4"],
-    skillLevel: "intermediate",
-    notes: "Need 8 more for full court.",
-    createdAt: serverTimestamp(),
-  }
+const SPORTS = ['basketball', 'soccer', 'tennis', 'volleyball', 'pickleball', 'ultimate', 'baseball'];
+const COURTS = [
+  { id: 'zilker-park-volleyball', name: 'Zilker Park', district: 'south-central' },
+  { id: 'clark-field-basketball', name: 'Clark Field', district: 'downtown' },
+  { id: 'rosewood-park-tennis', name: 'Rosewood Park', district: 'east-austin' },
+  { id: 'pease-park-basketball', name: 'Pease Park', district: 'downtown' }
 ];
 
 async function generate() {
-  console.log("Generating guest games...");
-  for (const game of fakeGuestGames) {
+  console.log("Generating 20 stress-test games...");
+  for (let i = 0; i < 20; i++) {
+    const sport = SPORTS[i % SPORTS.length];
+    const court = COURTS[i % COURTS.length];
+    
+    // Mix of times: 5 ended (3hrs ago), 5 live (now), 5 later today, 5 tomorrow
+    let timeOffset;
+    let status = 'open';
+    if (i < 5) {
+      timeOffset = -1000 * 60 * 60 * 3; // 3 hours ago (Ended)
+    } else if (i < 10) {
+      timeOffset = 1000 * 60 * 5; // 5 mins from now (Live)
+    } else if (i < 15) {
+      timeOffset = 1000 * 60 * 60 * 5; // 5 hours from now (Upcoming)
+    } else {
+      timeOffset = 1000 * 60 * 60 * 24; // tomorrow (Upcoming)
+    }
+
+    const game = {
+      courtId: court.id,
+      courtName: court.name,
+      district: court.district,
+      sport: sport,
+      createdBy: `stress-test-${i}`,
+      creatorName: `Tester ${i}`,
+      hostName: `Tester ${i}`,
+      hostAvatarUrl: "",
+      status: status,
+      scheduledTime: Timestamp.fromDate(new Date(Date.now() + timeOffset)),
+      maxPlayers: 10,
+      currentPlayers: [`stress-test-${i}`],
+      skillLevel: "casual",
+      notes: `Stress test game ${i}`,
+      createdAt: serverTimestamp(),
+    };
+
     try {
       const docRef = await addDoc(collection(db, 'games'), game);
-      console.log("Generated game:", docRef.id);
+      console.log(`Generated game ${i} (${sport}):`, docRef.id);
     } catch (e) {
       console.error("Error generating game:", e);
     }

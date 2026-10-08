@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SearchBar from '../components/SearchBar';
 import Avatar from '../components/Avatar';
@@ -13,9 +13,10 @@ import './Home.css';
 export default function Home() {
   const { user, userProfile, isGuest } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const containerRef = useRef(null);
   // Default to real street/terrain map view matching user's reference map
-  const [viewMode, setViewMode] = useState('street'); // 'street' | 'dashboard'
+  const [viewMode, setViewMode] = useState(location.state?.viewMode || 'street'); // 'street' | 'dashboard'
   const [courts, setCourts] = useState(AUSTIN_COURTS_DATA || []);
   const [showCourtSelect, setShowCourtSelect] = useState(false);
   const [toast, setToast] = useState(null);
@@ -412,7 +413,15 @@ export default function Home() {
             {gamesList.length === 0 ? (
               <div className="haf-empty">No active games right now. Call Next to start one!</div>
             ) : (
-              gamesList.slice(0, 10).map((game) => {
+              [...gamesList].sort((a, b) => {
+                const dateA = a.scheduledTime?.toDate ? a.scheduledTime.toDate() : (a.scheduledTime ? new Date(a.scheduledTime) : new Date());
+                const dateB = b.scheduledTime?.toDate ? b.scheduledTime.toDate() : (b.scheduledTime ? new Date(b.scheduledTime) : new Date());
+                const isOverA = dateA.getTime() <= Date.now() - (2 * 60 * 60 * 1000);
+                const isOverB = dateB.getTime() <= Date.now() - (2 * 60 * 60 * 1000);
+                if (isOverA && !isOverB) return 1;
+                if (!isOverA && isOverB) return -1;
+                return dateB.getTime() - dateA.getTime();
+              }).slice(0, 10).map((game) => {
                 const court = AUSTIN_COURTS_DATA.find((c) => c.id === game.courtId);
                 const sm = SPORT_META[game.sport] || SPORT_META['basketball'];
                 const scheduledDate = game.scheduledTime?.toDate ? game.scheduledTime.toDate() : (game.scheduledTime ? new Date(game.scheduledTime) : new Date());

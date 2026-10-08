@@ -123,6 +123,16 @@ export default function Profile() {
       </header>
 
       <div className="profile-container">
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <button 
+            className="action-btn" 
+            style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', background: 'var(--surface-elevated)', border: '1px solid var(--glass-border)' }}
+            onClick={() => navigate('/', { state: { viewMode: 'dashboard' } })}
+          >
+            <span>📊</span> Go to Live Dashboard
+          </button>
+        </div>
+
         {/* User Card */}
         <div className="profile-card">
           <div className="profile-avatar-wrapper">
