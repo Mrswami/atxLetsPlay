@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 class ErrorBoundary extends Component {
@@ -60,8 +60,42 @@ function ProtectedRoute({ children }) {
 
 export default function AppRouter() {
   const { loading } = useAuth();
-  
-  if (loading) return <Loading />;
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const [initialBoot, setInitialBoot] = useState(true);
+
+  useEffect(() => {
+    // Force at least 4 seconds for the initial pre-loader
+    const timer = setTimeout(() => {
+      setMinTimeElapsed(true);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isAppReady = !loading && minTimeElapsed;
+
+  useEffect(() => {
+    if (isAppReady && initialBoot) {
+      const loader = document.getElementById('pre-loader-container');
+      if (loader) {
+        loader.style.opacity = '0';
+        loader.style.transition = 'opacity 0.5s ease-out';
+        setTimeout(() => {
+          loader.remove();
+          setInitialBoot(false);
+        }, 500);
+      } else {
+        setInitialBoot(false);
+      }
+    }
+  }, [isAppReady, initialBoot]);
+
+  if (!isAppReady && initialBoot) {
+    return null; // The index.html pre-loader is handling it
+  }
+
+  if (loading && !initialBoot) {
+    return <Loading />; // For any subsequent loading states
+  }
 
   return (
     <BrowserRouter>
