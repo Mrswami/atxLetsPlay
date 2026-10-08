@@ -388,7 +388,7 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
                   onClick={() => {
                     const subject = encodeURIComponent(`Missing Court Recommendation - ${activeDistrictZone}`);
                     const body = encodeURIComponent("Hi Let's Play ATX team,\n\nI'd like to recommend a court that's missing:\n\nCourt name:\nAddress:\nSport(s):\n");
-                    window.location.href = `mailto:hello@letsplayatx.com?subject=${subject}&body=${body}`;
+                    window.location.href = `mailto:jacobflutterdev@gmail.com?subject=${subject}&body=${body}`;
                   }}
                   style={{
                     width: '100%', padding: '1.1rem', background: 'rgba(16,185,129,0.12)',
