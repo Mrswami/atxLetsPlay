@@ -117,7 +117,7 @@ exports.sendGameReminders = onSchedule("every 5 minutes", async () => {
       if (!uSnap.exists) continue;
       const u = uSnap.data();
       const prefs = u.notificationPrefs || {};
-      const ch = { push: false, email: true, sms: false, ...(prefs.channels || {}) };
+      const ch = { push: false, email: false, sms: false, ...(prefs.channels || {}) };
       const gameRemindersOn = (prefs.events || {}).gameReminders !== false;
       if (!gameRemindersOn) continue;
 

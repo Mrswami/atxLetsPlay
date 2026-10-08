@@ -86,8 +86,8 @@ export default function Settings() {
   const [unitSystem, setUnitSystem] = useState(() => localStorage.getItem('atx_unit_system') || 'mi');
 
   // Notifications & Privacy State
-  const [pickupAlerts, setPickupAlerts] = useState(true);
-  const [gameInvites, setGameInvites] = useState(true);
+  const [pickupAlerts, setPickupAlerts] = useState(false);
+  const [gameInvites, setGameInvites] = useState(false);
   const [onCourtStatus, setOnCourtStatus] = useState(true);
   const [publicProfile, setPublicProfile] = useState(true);
 
@@ -181,8 +181,8 @@ export default function Settings() {
     const uSkill = profile.skillLevel || 'intermediate';
     const uSports = Array.isArray(profile.sport_preferences) ? profile.sport_preferences : (profile.sport_preferences ? [profile.sport_preferences] : ['basketball']);
 
-    const uPickup = profile.pickupAlerts !== undefined ? profile.pickupAlerts : true;
-    const uInvites = profile.gameInvites !== undefined ? profile.gameInvites : true;
+    const uPickup = profile.pickupAlerts !== undefined ? profile.pickupAlerts : false;
+    const uInvites = profile.gameInvites !== undefined ? profile.gameInvites : false;
     const uOnCourt = profile.onCourtStatus !== undefined ? profile.onCourtStatus : true;
     const uPublic = profile.publicProfile !== undefined ? profile.publicProfile : true;
 
