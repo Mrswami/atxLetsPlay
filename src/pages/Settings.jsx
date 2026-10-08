@@ -181,7 +181,7 @@ export default function Settings() {
     const uHomeCourt = profile.homeCourtId || '';
     const uPlayStyle = profile.playStyle || 'chill';
     const uSkill = profile.skillLevel || 'intermediate';
-    const uSports = profile.sport_preferences || ['basketball'];
+    const uSports = Array.isArray(profile.sport_preferences) ? profile.sport_preferences : (profile.sport_preferences ? [profile.sport_preferences] : ['basketball']);
 
     const uPickup = profile.pickupAlerts !== undefined ? profile.pickupAlerts : true;
     const uInvites = profile.gameInvites !== undefined ? profile.gameInvites : true;
@@ -204,7 +204,6 @@ export default function Settings() {
     setPublicProfile(uPublic);
 
     setInitialState({
-      username: uUsername,
       username: uUsername,
       displayName: dName,
       bio: uBio,
@@ -984,7 +983,7 @@ export default function Settings() {
                     key={ps.id}
                     type="button"
                     className={`playstyle-chip ${playStyle === ps.id ? 'active' : ''}`}
-                    onClick={() => { setSkillLevel(lvl.id); setTimeout(handleSaveChanges, 50); }}
+                    onClick={() => { setPlayStyle(ps.id); setTimeout(handleSaveChanges, 50); }}
                   >
                     <span className="psc-emoji">{ps.emoji}</span>
                     <div className="psc-info">

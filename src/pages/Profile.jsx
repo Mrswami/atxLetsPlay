@@ -99,7 +99,7 @@ export default function Profile() {
   };
 
   const earnedBadges = profile?.badges || ['pioneer', 'good-sport'];
-  const prefSports = profile?.sport_preferences || ['basketball', 'soccer'];
+  const prefSports = Array.isArray(profile?.sport_preferences) ? profile.sport_preferences : (profile?.sport_preferences ? [profile.sport_preferences] : ['basketball', 'soccer']);
 
   return (
     <div className="profile-page">
@@ -137,6 +137,7 @@ export default function Profile() {
           </div>
 
           <h2 className="profile-name">{displayName}</h2>
+          {profile?.username && <div className="profile-username" style={{ fontSize: '0.9rem', color: 'var(--accent-secondary)', fontWeight: '600', marginBottom: '0.2rem' }}>@{profile.username}</div>}
           <p className="profile-district">📍 {districtName} District</p>
 
           {homeCourt && (
