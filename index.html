@@ -61,7 +61,15 @@
         }
       </style>
       <div class="pre-loader">
-        <video class="pre-loader-video" src="/assets/loadingScreen.mp4" autoplay loop muted playsinline></video>
+        <style>
+          .mobile-video { display: none; }
+          @media (max-width: 768px) {
+            .desktop-video { display: none !important; }
+            .mobile-video { display: block !important; }
+          }
+        </style>
+        <video class="pre-loader-video desktop-video" src="/assets/loadingScreen.mp4" autoplay loop muted playsinline></video>
+        <video class="pre-loader-video mobile-video" src="/assets/loadingScreenMobile.mp4" autoplay loop muted playsinline></video>
         <div class="pre-loader-overlay">
           <p class="pre-loader-text">LOADING...</p>
         </div>
