@@ -43,10 +43,14 @@
 
 .profile-header h1 {
   font-family: var(--font-display);
-  font-size: 1.45rem;
+  font-size: 1.3rem; /* slightly smaller for mobile */
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: 0.02em;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Container */
@@ -324,6 +328,7 @@
   align-items: center;
   gap: 0.35rem;
   cursor: pointer;
+  flex-shrink: 0;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
