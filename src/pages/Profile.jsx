@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
 import { SPORT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
@@ -57,6 +57,36 @@ export default function Profile() {
   useEffect(() => {
     if (!subjectUid || String(subjectUid).startsWith('guest-')) return;
     getNoShowStats(subjectUid).then(setStats).catch(() => setStats(null));
+  }, [subjectUid]);
+
+  const [matchHistory, setMatchHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    if (!subjectUid || String(subjectUid).startsWith('guest-')) {
+      setLoadingHistory(false);
+      return;
+    }
+    const q1 = query(collection(db, 'games'), where('createdBy', '==', subjectUid));
+    const q2 = query(collection(db, 'games'), where('currentPlayers', 'array-contains', subjectUid));
+    
+    Promise.all([getDocs(q1), getDocs(q2)]).then(([snap1, snap2]) => {
+      const allGames = new Map();
+      snap1.docs.forEach(d => allGames.set(d.id, { id: d.id, ...d.data() }));
+      snap2.docs.forEach(d => allGames.set(d.id, { id: d.id, ...d.data() }));
+      
+      const games = Array.from(allGames.values())
+        .sort((a, b) => {
+          const tA = a.scheduledTime?.toMillis ? a.scheduledTime.toMillis() : 0;
+          const tB = b.scheduledTime?.toMillis ? b.scheduledTime.toMillis() : 0;
+          return tB - tA; 
+        });
+      setMatchHistory(games);
+      setLoadingHistory(false);
+    }).catch(err => {
+      console.warn('Error fetching match history', err);
+      setLoadingHistory(false);
+    });
   }, [subjectUid]);
 
   async function submitReport() {
@@ -261,6 +291,34 @@ export default function Profile() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Match History */}
+        <div className="profile-section">
+          <h3>Match History</h3>
+          <div className="profile-history-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {loadingHistory ? (
+              <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1rem' }}>Loading games...</div>
+            ) : matchHistory.length === 0 ? (
+              <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1rem', background: 'var(--surface-elevated)', borderRadius: '12px' }}>No games played yet.</div>
+            ) : (
+              matchHistory.map(game => (
+                <div key={game.id} className="profile-history-card" style={{ background: 'var(--surface-elevated)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate(`/live-game/${game.id}`)}>
+                  <div>
+                    <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                      {SPORT_META[game.sport]?.emoji} {AUSTIN_COURTS_DATA.find(c => c.id === game.courtId)?.name || 'Austin Court'}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {game.scheduledTime?.toMillis ? new Date(game.scheduledTime.toMillis()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Unknown Time'} • {game.status === 'open' ? 'Active' : 'Completed'}
+                    </div>
+                  </div>
+                  <div style={{ color: game.createdBy === subjectUid ? 'var(--accent-primary)' : 'var(--text-secondary)', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                    {game.createdBy === subjectUid ? 'Hosted' : 'Joined'}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
