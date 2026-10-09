@@ -75,14 +75,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem 0;
 }
 
 .lg-video-overlay {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
+  margin: auto;
 }
 
 .lg-host-name {
@@ -129,7 +132,7 @@
 }
 
 .lg-score-num {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 900;
   line-height: 1;
 }
@@ -149,7 +152,7 @@
 }
 
 .lg-score-divider {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--text-secondary);
 }
@@ -178,7 +181,8 @@
 }
 
 .lg-chat-section {
-  height: 40vh;
+  height: 35vh;
+  min-height: 250px;
   display: flex;
   flex-direction: column;
   background: var(--surface-elevated);
