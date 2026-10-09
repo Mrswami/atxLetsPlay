@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { 
@@ -19,6 +20,8 @@ import Avatar from './Avatar';
 import './CourtComments.css';
 
 export default function CourtComments({ courtId }) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, userProfile } = useAuth();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -52,8 +55,14 @@ export default function CourtComments({ courtId }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user) {
-      alert('Please log in to post a comment.');
+    if (!newComment.trim()) return;
+
+    if (!user || user.isAnonymous) {
+      if (window.confirm("You need to sign in to post comments. Go to Login?")) {
+        navigate(`/login?redirectTo=${encodeURIComponent(location.pathname)}`, {
+          state: { redirectTo: location.pathname }
+        });
+      }
       return;
     }
     if (!newComment.trim()) return;
@@ -79,8 +88,12 @@ export default function CourtComments({ courtId }) {
   };
 
   const handleToggleLike = async (comment) => {
-    if (!user) {
-      alert('Please log in to like comments.');
+    if (!user || user.isAnonymous) {
+      if (window.confirm("You need to sign in to like comments. Go to Login?")) {
+        navigate(`/login?redirectTo=${encodeURIComponent(location.pathname)}`, {
+          state: { redirectTo: location.pathname }
+        });
+      }
       return;
     }
     
@@ -117,17 +130,17 @@ export default function CourtComments({ courtId }) {
       <form onSubmit={handleSubmit} className="cc-form">
         <textarea
           className="cc-input"
-          placeholder={user ? "Add a comment, tip, or review..." : "Log in to post a comment..."}
+          placeholder={"Add a comment, tip, or review..."}
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          disabled={!user || submitting}
+          disabled={submitting}
           rows="3"
         />
         <div className="cc-form-actions">
           <button 
             type="submit" 
             className="cc-submit-btn" 
-            disabled={!user || !newComment.trim() || submitting}
+            disabled={!newComment.trim() || submitting}
           >
             {submitting ? 'Posting...' : 'Post Comment'}
           </button>
