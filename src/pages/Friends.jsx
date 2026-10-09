@@ -141,7 +141,7 @@ export default function Friends() {
     
     try {
       await sendFriendRequest(user.uid, searchResult.id);
-      triggerToast('Friend request sent!');
+      triggerToast('Friend request sent! You can undo or cancel at any time.');
       setSearchResult(null);
       setSearchQuery('');
     } catch(e) {
@@ -152,12 +152,13 @@ export default function Friends() {
   const onAccept = async (friendshipId, otherUid) => {
     await acceptFriendRequest(user.uid, otherUid);
     setFriendships(prev => prev.map(f => f.id === friendshipId ? { ...f, status: 'accepted' } : f));
-    triggerToast('Friend added!');
+    triggerToast('Friend added! 🎉');
   };
 
-  const onRejectOrRemove = async (friendshipId, otherUid) => {
+  const onRejectOrRemove = async (friendshipId, otherUid, actionLabel = 'cancelled') => {
     await removeFriendOrRequest(user.uid, otherUid);
     setFriendships(prev => prev.filter(f => f.id !== friendshipId));
+    triggerToast(`Friend request ${actionLabel}.`);
   };
 
   const acceptedFriends = friendships.filter(f => f.status === 'accepted');
@@ -223,7 +224,7 @@ export default function Friends() {
                             <span>@{prof.username || 'user'}</span>
                           </div>
                           {isOwnView && (
-                            <button className="fc-remove" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId); }}>
+                            <button className="fc-remove" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId, 'removed'); }}>
                               Remove
                             </button>
                           )}
@@ -297,7 +298,7 @@ export default function Friends() {
                           </div>
                           <div className="fc-actions">
                             <button className="fc-accept" onClick={(e) => { e.stopPropagation(); onAccept(f.id, otherId); }}>Accept</button>
-                            <button className="fc-decline" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId); }}>Decline</button>
+                            <button className="fc-decline" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId, 'declined'); }}>Decline</button>
                           </div>
                         </div>
                       );
@@ -320,7 +321,7 @@ export default function Friends() {
                               <span>@{prof.username || 'user'}</span>
                             </div>
                             <div className="fc-actions">
-                              <button className="fc-decline" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId); }}>Cancel</button>
+                              <button className="fc-decline" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId, 'cancelled'); }}>Cancel</button>
                             </div>
                           </div>
                         );

@@ -2,7 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2026-10-07
+## [2.1.0] - 2026-10-08
+
+### Added
+- **Social Graph Ecosystem & Friends Hub**: Full friend request management system backed by Firestore `friendships` collection. Includes inbox for pending requests, sent requests tab, friend list count, and user profile friend counters.
+- **Friend Request Reassurance & Safety Undo**: Replaced basic alerts with a styled confirmation modal when sending friend requests, explicitly reassuring the user that the request can be undone.
+- **Spam & Bombardment Protection**: Locked pending request button state (`📩 Request Sent`) with a deterministic `uid1_uid2` document structure, preventing duplicate request spam.
+- **Safety Confirmation Dialogs**: Added custom glassmorphic confirmation modals for canceling pending friend requests and removing existing friends from squad, backed by instant toast notifications.
+- **Court Community Discussions & Comments**: Added a real-time discussion section to every court detail page (`CourtComments.jsx`), supporting comments, reviews, and timestamps.
+- **Guest Account Prompting**: Added sign-in/account creation prompts when guests attempt to submit comments or send messages in live chat.
+- **Live Chat Profile Linking & Banner Visuals**: Clicking a user's name or avatar in chat routes to their profile page. Chat messages display `@username` and timestamps. Replaced lightning bolt graphics with high-res court banner photo backgrounds.
+- **Game Duration & Live Room Quick Join**: Added game duration selection (1–4 hours) on creation. Completed/expired games gray out in feeds. Added "Join Live Match Room" quick-action button for ongoing games.
+
+### Fixed
+- **Navigation & Back Buttons**: Resolved back button routing issues across court detail pages, player profiles, and live chat rooms.
+- **Court Metadata**: Fixed broken link for Alamo Pocket Park and verified coordinates across all Austin courts.
+
 
 ### Added
 - **Live Game Chat & Score**: Added a new `/live-game/:gameId` route. Live games in the ATX feed now route to a real-time chat page with floating YouTube-style heart reactions, timestamped messages, and a host-controlled Home/Away score tracker.

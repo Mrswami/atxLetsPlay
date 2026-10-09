@@ -1,7 +1,10 @@
 {
   "mcpServers": {
     "openart": {
-      "serverUrl": "https://mcp.openart.ai/mcp"
+      "serverUrl": "https://mcp.openart.ai/mcp",
+      "env": {
+        "OPENART_API_KEY": "your_token_here"
+      }
     }
   }
 }

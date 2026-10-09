@@ -67,6 +67,13 @@ export default function Profile() {
   const [friendshipStatus, setFriendshipStatus] = useState(null); // 'pending', 'accepted', null
   const [actionUser, setActionUser] = useState(null);
   const [friendCount, setFriendCount] = useState(0);
+  const [friendDialog, setFriendDialog] = useState(null); // null | 'sent' | 'confirm_undo' | 'confirm_remove'
+  const [toastMsg, setToastMsg] = useState('');
+
+  const triggerToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3500);
+  };
 
   useEffect(() => {
     if (!subjectUid || String(subjectUid).startsWith('guest-')) return;
@@ -90,7 +97,7 @@ export default function Profile() {
 
   const handleFriendAction = async () => {
     if (!user || user.isAnonymous) {
-      alert("Sign in to add friends!");
+      triggerToast("Sign in to add friends!");
       return;
     }
     
@@ -99,32 +106,54 @@ export default function Profile() {
         await sendFriendRequest(user.uid, subjectUid);
         setFriendshipStatus('pending');
         setActionUser(user.uid);
-        alert('Friend request sent!');
+        setFriendDialog('sent');
       } else if (friendshipStatus === 'pending') {
         if (actionUser === user.uid) {
-          // Cancel request
-          await removeFriendOrRequest(user.uid, subjectUid);
-          setFriendshipStatus(null);
-          alert('Friend request cancelled.');
+          // Open safety confirmation dialog to undo request
+          setFriendDialog('confirm_undo');
         } else {
           // Accept request
           await acceptFriendRequest(user.uid, subjectUid);
           setFriendshipStatus('accepted');
           setFriendCount(prev => prev + 1);
-          alert('Friend request accepted!');
+          triggerToast(`You and ${displayName} are now friends! 🎉`);
         }
       } else if (friendshipStatus === 'accepted') {
-        if (window.confirm("Remove friend?")) {
-          await removeFriendOrRequest(user.uid, subjectUid);
-          setFriendshipStatus(null);
-          setFriendCount(prev => Math.max(0, prev - 1));
-        }
+        setFriendDialog('confirm_remove');
       }
     } catch (e) {
       console.error(e);
-      alert('Error updating friendship.');
+      triggerToast('Error updating friendship.');
     }
   };
+
+  const handleConfirmUndo = async () => {
+    setFriendDialog(null);
+    try {
+      await removeFriendOrRequest(user.uid, subjectUid);
+      setFriendshipStatus(null);
+      setActionUser(null);
+      triggerToast('Friend request cancelled.');
+    } catch (e) {
+      console.error(e);
+      triggerToast('Error cancelling request.');
+    }
+  };
+
+  const handleConfirmRemove = async () => {
+    setFriendDialog(null);
+    try {
+      await removeFriendOrRequest(user.uid, subjectUid);
+      setFriendshipStatus(null);
+      setActionUser(null);
+      setFriendCount(prev => Math.max(0, prev - 1));
+      triggerToast('Friend removed.');
+    } catch (e) {
+      console.error(e);
+      triggerToast('Error removing friend.');
+    }
+  };
+
 
   useEffect(() => {
     if (!subjectUid || String(subjectUid).startsWith('guest-')) {
@@ -297,18 +326,35 @@ export default function Profile() {
         </div>
 
         {!isOwnProfile && user && !user.isAnonymous && (
-          <div className="profile-actions-row" style={{ display: 'flex', gap: '1rem', marginTop: '1rem', marginBottom: '1rem', justifyContent: 'center' }}>
-            <button 
-              className={`action-btn ${friendshipStatus === 'accepted' ? '' : 'action-btn--join'}`} 
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: friendshipStatus === 'pending' && actionUser === user.uid ? 0.6 : 1 }}
-              onClick={handleFriendAction}
-            >
-              <span>{friendshipStatus === 'accepted' ? '✔️' : '🤝'}</span> 
-              {friendshipStatus === 'accepted' ? 'Friends' : friendshipStatus === 'pending' ? (actionUser === user.uid ? 'Request Sent' : 'Accept Request') : 'Add Friend'}
-            </button>
-            <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--surface-elevated)' }} onClick={() => navigate('/friends')}>
-              <span>💬</span> Message
-            </button>
+          <div className="profile-actions-row" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button 
+                className={`action-btn ${friendshipStatus === 'accepted' ? '' : 'action-btn--join'}`} 
+                style={{ 
+                  flex: 1, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justify: 'center', 
+                  gap: '8px',
+                  background: friendshipStatus === 'pending' && actionUser === user.uid ? 'rgba(234, 179, 8, 0.15)' : undefined,
+                  border: friendshipStatus === 'pending' && actionUser === user.uid ? '1px solid rgba(234, 179, 8, 0.4)' : undefined,
+                  color: friendshipStatus === 'pending' && actionUser === user.uid ? '#fde047' : undefined
+                }}
+                onClick={handleFriendAction}
+                title={friendshipStatus === 'pending' && actionUser === user.uid ? 'Click to cancel friend request' : undefined}
+              >
+                <span>{friendshipStatus === 'accepted' ? '✔️' : (friendshipStatus === 'pending' && actionUser === user.uid ? '📩' : '🤝')}</span> 
+                {friendshipStatus === 'accepted' ? 'Friends' : friendshipStatus === 'pending' ? (actionUser === user.uid ? 'Request Sent' : 'Accept Request') : 'Add Friend'}
+              </button>
+              <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--surface-elevated)' }} onClick={() => navigate('/friends')}>
+                <span>💬</span> Message
+              </button>
+            </div>
+            {friendshipStatus === 'pending' && actionUser === user.uid && (
+              <div style={{ fontSize: '0.75rem', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                💡 Request pending. Tap button above to undo or cancel.
+              </div>
+            )}
           </div>
         )}
 
@@ -413,6 +459,75 @@ export default function Profile() {
           © 2026 Swami Software, LLC. Powered by Swami Cloud.
         </div>
       </div>
+
+      {/* Friend Action & Safety Confirmation Dialogs */}
+      {friendDialog && (
+        <div className="friend-modal-overlay" onClick={() => setFriendDialog(null)}>
+          <div className="friend-modal-content anim-scale-in" onClick={(e) => e.stopPropagation()}>
+            {friendDialog === 'sent' && (
+              <>
+                <div className="friend-modal-icon">🤝</div>
+                <h3>Friend Request Sent!</h3>
+                <p>
+                  Your friend request has been delivered to <strong>{displayName}</strong>. They can accept it from their Friends hub.
+                </p>
+                <div className="friend-modal-notice">
+                  <span>🛡️</span>
+                  <span><strong>Accidentally clicked?</strong> You can undo or cancel your request at any time.</span>
+                </div>
+                <div className="friend-modal-actions">
+                  <button className="secondary-btn" onClick={handleConfirmUndo}>
+                    Undo Request
+                  </button>
+                  <button className="primary-btn" onClick={() => setFriendDialog(null)}>
+                    Got It
+                  </button>
+                </div>
+              </>
+            )}
+
+            {friendDialog === 'confirm_undo' && (
+              <>
+                <div className="friend-modal-icon warning">⚠️</div>
+                <h3>Undo Friend Request?</h3>
+                <p>
+                  Are you sure you want to cancel your pending friend request to <strong>{displayName}</strong>?
+                </p>
+                <div className="friend-modal-actions">
+                  <button className="secondary-btn danger" onClick={handleConfirmUndo}>
+                    Yes, Undo Request
+                  </button>
+                  <button className="primary-btn" onClick={() => setFriendDialog(null)}>
+                    Keep Request
+                  </button>
+                </div>
+              </>
+            )}
+
+            {friendDialog === 'confirm_remove' && (
+              <>
+                <div className="friend-modal-icon warning">💔</div>
+                <h3>Remove Friend?</h3>
+                <p>
+                  Are you sure you want to remove <strong>{displayName}</strong> from your squad?
+                </p>
+                <div className="friend-modal-actions">
+                  <button className="secondary-btn danger" onClick={handleConfirmRemove}>
+                    Yes, Remove Friend
+                  </button>
+                  <button className="primary-btn" onClick={() => setFriendDialog(null)}>
+                    Keep Friend
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Toast notification */}
+      {toastMsg && <div className="profile-toast">{toastMsg}</div>}
     </div>
   );
 }
+
