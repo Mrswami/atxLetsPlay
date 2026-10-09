@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
+import { getCartoonImageUrl } from '../data/courtsMeta';
 import Avatar from '../components/Avatar';
 import './LiveGame.css';
 
@@ -56,6 +57,7 @@ export default function LiveGame() {
       text: newMessage.trim(),
       senderId: user.uid,
       senderName: userProfile?.displayName || user.displayName || 'Guest Player',
+      senderUsername: userProfile?.username || '',
       createdAt: serverTimestamp()
     });
     setNewMessage('');
@@ -129,9 +131,17 @@ export default function LiveGame() {
         </div>
       </header>
 
-      <div className="lg-video-placeholder">
-        <div className="lg-video-overlay">
-          <Avatar url={game.hostAvatarUrl} name={game.creatorName || game.hostName} size="large" />
+      <div 
+        className="lg-video-placeholder"
+        style={{
+          backgroundImage: `url(${getCartoonImageUrl(game.courtId)})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        <div className="lg-video-overlay" style={{ background: 'rgba(0,0,0,0.6)' }}>
+          {/* Avatar is hidden per user request to remove "big lightning bolt circle" and replace with banner */}
           <p className="lg-host-name">{game.creatorName || game.hostName || (game.createdBy?.startsWith('guest-') ? 'A Guest Player' : 'A Player')} {isOver ? 'hosted' : 'is hosting'} {game.sport}</p>
           <div className="lg-participants">
             <span className="lg-player-count">👥 {game.currentPlayers?.length || 1} participant(s)</span>
@@ -173,7 +183,23 @@ export default function LiveGame() {
               <span className="lg-chat-time">
                 {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
               </span>
-              <span className="lg-chat-sender">{msg.senderName}:</span>
+              <span 
+                className="lg-chat-sender"
+                onClick={() => {
+                  if (msg.senderId && !msg.senderId.startsWith('guest-')) {
+                    navigate(`/profile/${msg.senderId}`);
+                  }
+                }}
+                style={{ cursor: msg.senderId && !msg.senderId.startsWith('guest-') ? 'pointer' : 'default' }}
+              >
+                {msg.senderName}
+                {msg.senderUsername && (
+                  <span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: '4px', fontWeight: 'normal' }}>
+                    @{msg.senderUsername}
+                  </span>
+                )}
+                :
+              </span>
               <span className="lg-chat-text">{msg.text}</span>
             </div>
           ))}
