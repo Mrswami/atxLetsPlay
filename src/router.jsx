@@ -64,10 +64,10 @@ export default function AppRouter() {
   const [initialBoot, setInitialBoot] = useState(true);
 
   useEffect(() => {
-    // Force at least 3 seconds for the initial pre-loader
+    // Force a minimal delay for the initial pre-loader
     const timer = setTimeout(() => {
       setMinTimeElapsed(true);
-    }, 3000);
+    }, 500);
     return () => clearTimeout(timer);
   }, []);
 
