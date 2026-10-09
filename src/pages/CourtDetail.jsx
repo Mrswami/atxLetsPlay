@@ -274,6 +274,7 @@ export default function CourtDetail() {
                     </div>
                   );
                 })}
+              </div>
             )}
           </div>
         )}
