@@ -282,6 +282,7 @@ export default function CourtDetail() {
 }
 
 function GameCard({ game, userId, onAction }) {
+  const navigate = useNavigate();
   const meta = SPORT_META[game.sport];
   const scheduledDate = game.scheduledTime?.toDate?.();
   const timeStr = scheduledDate
@@ -290,6 +291,11 @@ function GameCard({ game, userId, onAction }) {
 
   const spotsLeft = (game.maxPlayers || 10) - (game.currentPlayers?.length || 0);
   const isJoined = game.currentPlayers?.includes(userId);
+
+  const durationMs = (game.duration || 2) * 60 * 60 * 1000;
+  const isLive = scheduledDate && 
+                 Date.now() >= (scheduledDate.getTime() - (15 * 60 * 1000)) && 
+                 Date.now() < scheduledDate.getTime() + durationMs;
 
   return (
     <div className={`game-card ${isJoined ? 'joined' : ''}`}>
@@ -304,6 +310,17 @@ function GameCard({ game, userId, onAction }) {
         </span>
       </div>
       {game.notes && <p className="game-notes">{game.notes}</p>}
+      
+      {isJoined && isLive && (
+        <button
+          className="game-join-btn"
+          style={{ marginBottom: '8px', background: 'var(--accent-primary)', color: 'white', border: 'none' }}
+          onClick={() => navigate(`/live-game/${game.id}`)}
+        >
+          JOIN LIVE MATCH ROOM
+        </button>
+      )}
+      
       <button
         className={`game-join-btn ${isJoined ? 'leave' : ''}`}
         disabled={spotsLeft === 0 && !isJoined}
