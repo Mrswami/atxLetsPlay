@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
 import { getUserFriendships, sendFriendRequest, acceptFriendRequest, removeFriendOrRequest } from '../services/friends';
+import { generateDefaultUsername } from '../utils/usernameGenerator';
 import Avatar from '../components/Avatar';
 import './Friends.css';
 
@@ -216,12 +217,13 @@ export default function Friends() {
                     {acceptedFriends.map(f => {
                       const otherId = f.user1 === targetUid ? f.user2 : f.user1;
                       const prof = profiles[otherId] || {};
+                      const handle = prof.username || generateDefaultUsername(prof.displayName, otherId);
                       return (
                         <div key={f.id} className="friend-card" onClick={() => navigate(`/profile/${otherId}`)}>
                           <Avatar url={prof.avatarUrl} name={prof.displayName || 'Player'} size="medium" />
                           <div className="fc-info">
                             <h4>{prof.displayName || 'Player'}</h4>
-                            <span>@{prof.username || 'user'}</span>
+                            <span>@{handle}</span>
                           </div>
                           {isOwnView && (
                             <button className="fc-remove" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId, 'removed'); }}>
@@ -263,7 +265,7 @@ export default function Friends() {
                     </div>
                     <div className="sr-info">
                       <h3>{searchResult.displayName}</h3>
-                      <span className="sr-username">@{searchResult.username}</span>
+                      <span className="sr-username">@{searchResult.username || generateDefaultUsername(searchResult.displayName, searchResult.id)}</span>
                       <p className="sr-district">{searchResult.district}</p>
                     </div>
                     <button 
@@ -289,12 +291,13 @@ export default function Friends() {
                     {pendingRequests.map(f => {
                       const otherId = f.actionUser;
                       const prof = profiles[otherId] || {};
+                      const handle = prof.username || generateDefaultUsername(prof.displayName, otherId);
                       return (
                         <div key={f.id} className="friend-card req-card" onClick={() => navigate(`/profile/${otherId}`)}>
                           <Avatar url={prof.avatarUrl} name={prof.displayName || 'Player'} size="medium" />
                           <div className="fc-info">
                             <h4>{prof.displayName || 'Player'}</h4>
-                            <span>@{prof.username || 'user'}</span>
+                            <span>@{handle}</span>
                           </div>
                           <div className="fc-actions">
                             <button className="fc-accept" onClick={(e) => { e.stopPropagation(); onAccept(f.id, otherId); }}>Accept</button>
@@ -313,12 +316,13 @@ export default function Friends() {
                       {sentRequests.map(f => {
                         const otherId = f.user1 === user.uid ? f.user2 : f.user1;
                         const prof = profiles[otherId] || {};
+                        const handle = prof.username || generateDefaultUsername(prof.displayName, otherId);
                         return (
                           <div key={f.id} className="friend-card" onClick={() => navigate(`/profile/${otherId}`)}>
                             <Avatar url={prof.avatarUrl} name={prof.displayName || 'Player'} size="medium" />
                             <div className="fc-info">
                               <h4>{prof.displayName || 'Player'}</h4>
-                              <span>@{prof.username || 'user'}</span>
+                              <span>@{handle}</span>
                             </div>
                             <div className="fc-actions">
                               <button className="fc-decline" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId, 'cancelled'); }}>Cancel</button>

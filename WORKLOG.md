@@ -57,8 +57,16 @@ Today's development sprint expanded ATX Let's Play into a full **Social Network 
 
 ---
 
+### Phase 8: Default Username Generator & Real-Time Chat Handle Updates
+- **Default Username Auto-Generation**: Created `src/utils/usernameGenerator.js` (`generateDefaultUsername`) to auto-assign a clean `@handle_xxxx` on account creation or snapshot fallback.
+- **Real-Time Live Chat Handles**: Added real-time participant profile snapshot listeners in `LiveGame.jsx` (`userProfilesMap`). Chat messages dynamically display participants' latest `@username` handles in real-time.
+- **14-Day Cooldown Limit**: Enforced a strict 2-week limit on username modifications in `updateUsername` (`AuthContext.jsx`) with informative countdown messaging.
+
+---
+
 ### Deployment & CI/CD
 - Verified build via `vite build`.
-- Pushed commit `d41c336` to GitHub (`origin/master`).
+- Pushed updates to GitHub (`origin/master`).
 - Deployed live hosting bundle to Firebase Hosting (`https://atxletsplay.web.app`).
+
 

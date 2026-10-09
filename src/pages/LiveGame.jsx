@@ -4,6 +4,7 @@ import { doc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimes
 import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
 import { getCartoonImageUrl } from '../data/courtsMeta';
+import { generateDefaultUsername } from '../utils/usernameGenerator';
 import Avatar from '../components/Avatar';
 import './LiveGame.css';
 
@@ -16,6 +17,7 @@ export default function LiveGame() {
   const [chatMessages, setChatMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [hearts, setHearts] = useState([]);
+  const [userProfilesMap, setUserProfilesMap] = useState({});
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -37,6 +39,19 @@ export default function LiveGame() {
     return unsub;
   }, [gameId]);
 
+  // Real-time listener for chat participant profiles to ensure usernames update dynamically
+  useEffect(() => {
+    const senderIds = Array.from(new Set(chatMessages.map(m => m.senderId).filter(id => id && !id.startsWith('guest-'))));
+    const unsubs = senderIds.map(id => {
+      return onSnapshot(doc(db, 'users', id), (snap) => {
+        if (snap.exists()) {
+          setUserProfilesMap(prev => ({ ...prev, [id]: snap.data() }));
+        }
+      });
+    });
+    return () => unsubs.forEach(unsub => unsub());
+  }, [chatMessages]);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
@@ -53,11 +68,13 @@ export default function LiveGame() {
       return;
     }
     
+    const activeUsername = userProfile?.username || generateDefaultUsername(userProfile?.displayName || user.displayName, user.uid);
+
     await addDoc(collection(db, 'games', gameId, 'chat'), {
       text: newMessage.trim(),
       senderId: user.uid,
       senderName: userProfile?.displayName || user.displayName || 'Guest Player',
-      senderUsername: userProfile?.username || '',
+      senderUsername: activeUsername,
       createdAt: serverTimestamp()
     });
     setNewMessage('');
@@ -178,31 +195,36 @@ export default function LiveGame() {
 
       <div className="lg-chat-section">
         <div className="lg-chat-messages">
-          {chatMessages.map(msg => (
-            <div key={msg.id} className="lg-chat-message">
-              <span className="lg-chat-time">
-                {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
-              </span>
-              <span 
-                className="lg-chat-sender"
-                onClick={() => {
-                  if (msg.senderId && !msg.senderId.startsWith('guest-')) {
-                    navigate(`/profile/${msg.senderId}`);
-                  }
-                }}
-                style={{ cursor: msg.senderId && !msg.senderId.startsWith('guest-') ? 'pointer' : 'default' }}
-              >
-                {msg.senderName}
-                {msg.senderUsername && (
-                  <span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: '4px', fontWeight: 'normal' }}>
-                    @{msg.senderUsername}
-                  </span>
-                )}
-                :
-              </span>
-              <span className="lg-chat-text">{msg.text}</span>
-            </div>
-          ))}
+          {chatMessages.map(msg => {
+            const currentProf = userProfilesMap[msg.senderId];
+            const displayUsername = currentProf?.username || msg.senderUsername || (msg.senderId && !msg.senderId.startsWith('guest-') ? generateDefaultUsername(msg.senderName, msg.senderId) : '');
+
+            return (
+              <div key={msg.id} className="lg-chat-message">
+                <span className="lg-chat-time">
+                  {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}
+                </span>
+                <span 
+                  className="lg-chat-sender"
+                  onClick={() => {
+                    if (msg.senderId && !msg.senderId.startsWith('guest-')) {
+                      navigate(`/profile/${msg.senderId}`);
+                    }
+                  }}
+                  style={{ cursor: msg.senderId && !msg.senderId.startsWith('guest-') ? 'pointer' : 'default' }}
+                >
+                  {msg.senderName}
+                  {displayUsername && (
+                    <span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: '4px', fontWeight: 'normal' }}>
+                      @{displayUsername}
+                    </span>
+                  )}
+                  :
+                </span>
+                <span className="lg-chat-text">{msg.text}</span>
+              </div>
+            );
+          })}
           <div ref={chatEndRef} />
         </div>
         

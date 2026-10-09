@@ -7,6 +7,7 @@ import { SPORT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
 import { getNoShowStats, reportUser, blockUser, unblockUser, REPORT_REASONS } from '../services/safety';
 import { useBlocked } from '../hooks/useBlocked';
 import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest, removeFriendOrRequest, getUserFriendships } from '../services/friends';
+import { generateDefaultUsername } from '../utils/usernameGenerator';
 import './Profile.css';
 
 export default function Profile() {
@@ -270,7 +271,9 @@ export default function Profile() {
           </div>
 
           <h2 className="profile-name">{displayName}</h2>
-          {profile?.username && <div className="profile-username" style={{ fontSize: '0.9rem', color: 'var(--accent-secondary)', fontWeight: '600', marginBottom: '0.2rem' }}>@{profile.username}</div>}
+          <div className="profile-username" style={{ fontSize: '0.9rem', color: 'var(--accent-secondary)', fontWeight: '600', marginBottom: '0.2rem' }}>
+            @{profile?.username || generateDefaultUsername(displayName, subjectUid)}
+          </div>
           <p className="profile-district">📍 {districtName} District</p>
 
           {homeCourt && (

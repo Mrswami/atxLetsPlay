@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [2.1.0] - 2026-10-08
 
 ### Added
-- **Social Graph Ecosystem & Friends Hub**: Full friend request management system backed by Firestore `friendships` collection. Includes inbox for pending requests, sent requests tab, friend list count, and user profile friend counters.
+- **Default Username Auto-Generator**: Added `usernameGenerator.js` utility that automatically generates a unique handle (`@name_xxxx`) upon user account creation or login fallback, ensuring every user has a valid `@username`.
+- **Real-time Live Chat Username Resolution**: Updated Live Game Chat (`LiveGame.jsx`) with real-time profile listeners. Messages now display participants' current `@username` live. If a user updates their username in Settings, the chat updates dynamically across all messages.
+- **14-Day Username Change Limit**: Enforced a strict 2-week cooldown limit (`lastUsernameChange`) on username modifications in `AuthContext.jsx` and `Settings.jsx` to prevent handle squatting and churn.
 - **Friend Request Reassurance & Safety Undo**: Replaced basic alerts with a styled confirmation modal when sending friend requests, explicitly reassuring the user that the request can be undone.
 - **Spam & Bombardment Protection**: Locked pending request button state (`📩 Request Sent`) with a deterministic `uid1_uid2` document structure, preventing duplicate request spam.
 - **Safety Confirmation Dialogs**: Added custom glassmorphic confirmation modals for canceling pending friend requests and removing existing friends from squad, backed by instant toast notifications.

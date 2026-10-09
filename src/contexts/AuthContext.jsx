@@ -20,6 +20,7 @@ import {
 import { doc, setDoc, getDoc, deleteDoc, serverTimestamp, onSnapshot, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 import { sendVerification, refreshVerification } from '../services/safety';
+import { generateDefaultUsername } from '../utils/usernameGenerator';
 
 const AuthContext = createContext(null);
 
@@ -152,13 +153,22 @@ export function AuthProvider({ children }) {
         
         unsubProfile = onSnapshot(profileRef, async (snap) => {
           if (snap.exists()) {
-            setUserProfile(snap.data());
+            const data = snap.data();
+            if (!data.username && !firebaseUser.isAnonymous) {
+              const defaultHandle = generateDefaultUsername(data.displayName || firebaseUser.displayName, firebaseUser.uid);
+              data.username = defaultHandle;
+              setDoc(doc(db, 'usernames', defaultHandle), { uid: firebaseUser.uid }).catch(() => {});
+              setDoc(profileRef, { username: defaultHandle }, { merge: true }).catch(() => {});
+            }
+            setUserProfile(data);
             setLoading(false);
           } else {
+            const defaultHandle = generateDefaultUsername(firebaseUser.displayName, firebaseUser.uid);
             const profileData = {
               uid: firebaseUser.uid,
               displayName: firebaseUser.displayName || (firebaseUser.isAnonymous ? 'Austin Guest' : 'Player'),
               email: firebaseUser.email || '',
+              username: firebaseUser.isAnonymous ? '' : defaultHandle,
               avatarUrl: firebaseUser.photoURL || '',
               district: '',
               xp: firebaseUser.isAnonymous ? 100 : 0,
@@ -168,17 +178,22 @@ export function AuthProvider({ children }) {
             };
             try {
               await setDoc(profileRef, profileData);
+              if (!firebaseUser.isAnonymous) {
+                await setDoc(doc(db, 'usernames', defaultHandle), { uid: firebaseUser.uid }).catch(() => {});
+              }
             } catch (_) {
               setUserProfile(profileData);
             }
             setLoading(false);
           }
         }, () => {
+          const defaultHandle = generateDefaultUsername(firebaseUser.displayName, firebaseUser.uid);
           // In case snapshot fails (offline / permission rules)
           setUserProfile({
             uid: firebaseUser.uid,
             displayName: firebaseUser.displayName || 'Player',
             email: firebaseUser.email || '',
+            username: defaultHandle,
             avatarUrl: firebaseUser.photoURL || '',
             district: '',
             xp: 100,
@@ -296,6 +311,19 @@ export function AuthProvider({ children }) {
     }
     const currentUsername = userProfile?.username;
     if (newUsername === currentUsername) return; // No change
+
+    // Check 14-day (2-week) limit
+    if (userProfile?.lastUsernameChange) {
+      const lastMs = userProfile.lastUsernameChange.toMillis
+        ? userProfile.lastUsernameChange.toMillis()
+        : (userProfile.lastUsernameChange.seconds ? userProfile.lastUsernameChange.seconds * 1000 : 0);
+      const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+      const elapsed = Date.now() - lastMs;
+      if (elapsed < fourteenDaysMs) {
+        const remainingDays = Math.ceil((fourteenDaysMs - elapsed) / (24 * 60 * 60 * 1000));
+        throw new Error(`Username can only be changed once every 14 days. Please wait ${remainingDays} day(s).`);
+      }
+    }
 
     try {
       const batch = writeBatch(db);
