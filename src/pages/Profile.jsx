@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { SPORT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
 import { getNoShowStats, reportUser, blockUser, unblockUser, REPORT_REASONS } from '../services/safety';
 import { useBlocked } from '../hooks/useBlocked';
+import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest, removeFriendOrRequest, getUserFriendships } from '../services/friends';
 import './Profile.css';
 
 export default function Profile() {
@@ -61,6 +62,69 @@ export default function Profile() {
 
   const [matchHistory, setMatchHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+
+  // Friends Logic
+  const [friendshipStatus, setFriendshipStatus] = useState(null); // 'pending', 'accepted', null
+  const [actionUser, setActionUser] = useState(null);
+  const [friendCount, setFriendCount] = useState(0);
+
+  useEffect(() => {
+    if (!subjectUid || String(subjectUid).startsWith('guest-')) return;
+    
+    // Fetch Friend Count
+    getUserFriendships(subjectUid).then(friendships => {
+      setFriendCount(friendships.filter(f => f.status === 'accepted').length);
+    });
+
+    if (!isOwnProfile && user && !user.isAnonymous) {
+      getFriendshipStatus(user.uid, subjectUid).then(statusData => {
+        if (statusData) {
+          setFriendshipStatus(statusData.status);
+          setActionUser(statusData.actionUser);
+        } else {
+          setFriendshipStatus(null);
+        }
+      });
+    }
+  }, [subjectUid, isOwnProfile, user]);
+
+  const handleFriendAction = async () => {
+    if (!user || user.isAnonymous) {
+      alert("Sign in to add friends!");
+      return;
+    }
+    
+    try {
+      if (!friendshipStatus) {
+        await sendFriendRequest(user.uid, subjectUid);
+        setFriendshipStatus('pending');
+        setActionUser(user.uid);
+        alert('Friend request sent!');
+      } else if (friendshipStatus === 'pending') {
+        if (actionUser === user.uid) {
+          // Cancel request
+          await removeFriendOrRequest(user.uid, subjectUid);
+          setFriendshipStatus(null);
+          alert('Friend request cancelled.');
+        } else {
+          // Accept request
+          await acceptFriendRequest(user.uid, subjectUid);
+          setFriendshipStatus('accepted');
+          setFriendCount(prev => prev + 1);
+          alert('Friend request accepted!');
+        }
+      } else if (friendshipStatus === 'accepted') {
+        if (window.confirm("Remove friend?")) {
+          await removeFriendOrRequest(user.uid, subjectUid);
+          setFriendshipStatus(null);
+          setFriendCount(prev => Math.max(0, prev - 1));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error updating friendship.');
+    }
+  };
 
   useEffect(() => {
     if (!subjectUid || String(subjectUid).startsWith('guest-')) {
@@ -214,6 +278,10 @@ export default function Profile() {
 
         {/* Stats Grid */}
         <div className="profile-stats-grid">
+          <div className="stat-card" onClick={() => navigate('/friends', { state: { targetUid: subjectUid } })} style={{ cursor: 'pointer' }}>
+            <span className="stat-num">{friendCount}</span>
+            <span className="stat-label" style={{ color: 'var(--accent-primary)', textDecoration: 'underline' }}>Friends</span>
+          </div>
           <div className="stat-card">
             <span className="stat-num">{profile?.gamesPlayed || 0}</span>
             <span className="stat-label">Played</span>
@@ -226,16 +294,17 @@ export default function Profile() {
             <span className="stat-num">{profile?.rep ? `${profile.rep.toFixed(1)}★` : '5.0★'}</span>
             <span className="stat-label">Rep Rating</span>
           </div>
-          <div className="stat-card" id="reliability-stat">
-            <span className="stat-num">{stats?.reliability != null ? `${stats.reliability}%` : 'New'}</span>
-            <span className="stat-label">Reliability</span>
-          </div>
         </div>
 
         {!isOwnProfile && user && !user.isAnonymous && (
           <div className="profile-actions-row" style={{ display: 'flex', gap: '1rem', marginTop: '1rem', marginBottom: '1rem', justifyContent: 'center' }}>
-            <button className="action-btn action-btn--join" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <span>🤝</span> Add Friend
+            <button 
+              className={`action-btn ${friendshipStatus === 'accepted' ? '' : 'action-btn--join'}`} 
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: friendshipStatus === 'pending' && actionUser === user.uid ? 0.6 : 1 }}
+              onClick={handleFriendAction}
+            >
+              <span>{friendshipStatus === 'accepted' ? '✔️' : '🤝'}</span> 
+              {friendshipStatus === 'accepted' ? 'Friends' : friendshipStatus === 'pending' ? (actionUser === user.uid ? 'Request Sent' : 'Accept Request') : 'Add Friend'}
             </button>
             <button className="action-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'var(--surface-elevated)' }} onClick={() => navigate('/friends')}>
               <span>💬</span> Message

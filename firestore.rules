@@ -73,5 +73,23 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    match /court_comments/{commentId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
+      allow update: if request.auth != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
+      allow delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+    }
+
+    match /friendships/{friendshipId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null 
+        && (request.resource.data.user1 == request.auth.uid || request.resource.data.user2 == request.auth.uid)
+        && request.resource.data.actionUser == request.auth.uid;
+      allow update: if request.auth != null 
+        && (resource.data.user1 == request.auth.uid || resource.data.user2 == request.auth.uid);
+      allow delete: if request.auth != null 
+        && (resource.data.user1 == request.auth.uid || resource.data.user2 == request.auth.uid);
+    }
   }
 }

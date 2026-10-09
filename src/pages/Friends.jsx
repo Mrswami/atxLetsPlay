@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
+import { getUserFriendships, sendFriendRequest, acceptFriendRequest, removeFriendOrRequest } from '../services/friends';
+import Avatar from '../components/Avatar';
 import './Friends.css';
 
 export default function Friends() {
   const { user, userProfile, isGuest } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const targetUid = location.state?.targetUid || (user ? user.uid : null);
+  const isOwnView = targetUid === user?.uid;
+
   const [activeTab, setActiveTab] = useState('list'); // 'list' | 'search' | 'requests'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResult, setSearchResult] = useState(null);
@@ -15,12 +21,16 @@ export default function Friends() {
   const [searching, setSearching] = useState(false);
   const [toast, setToast] = useState('');
 
+  const [friendships, setFriendships] = useState([]);
+  const [profiles, setProfiles] = useState({});
+  const [loading, setLoading] = useState(true);
+
   // Fallback if accessed by guest directly somehow
   if (!user || isGuest) {
     return (
       <div className="friends-page">
         <header className="friends-header">
-          <button className="back-btn" onClick={() => navigate('/')}>
+          <button className="back-btn" onClick={() => navigate(-1)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="15 18 9 12 15 6" />
             </svg>
@@ -41,6 +51,34 @@ export default function Friends() {
     setTimeout(() => setToast(''), 3000);
   };
 
+  useEffect(() => {
+    if (!targetUid) return;
+    
+    setLoading(true);
+    getUserFriendships(targetUid).then(async (data) => {
+      setFriendships(data);
+      
+      // Fetch profiles for all friends/requests
+      const uidsToFetch = new Set();
+      data.forEach(f => {
+        const otherId = f.user1 === targetUid ? f.user2 : f.user1;
+        uidsToFetch.add(otherId);
+      });
+
+      const profs = { ...profiles };
+      for (const uid of uidsToFetch) {
+        if (!profs[uid]) {
+          const docSnap = await getDoc(doc(db, 'users', uid));
+          if (docSnap.exists()) {
+            profs[uid] = docSnap.data();
+          }
+        }
+      }
+      setProfiles(profs);
+      setLoading(false);
+    });
+  }, [targetUid]);
+
   const handleShareInvite = async () => {
     const username = userProfile?.username;
     const inviteUrl = `https://atxletsplay.web.app/invite?u=${username || user.uid}`;
@@ -56,7 +94,6 @@ export default function Friends() {
         console.warn('Share failed or was canceled', err);
       }
     } else {
-      // Fallback
       navigator.clipboard.writeText(inviteUrl);
       triggerToast('Invite link copied to clipboard!');
     }
@@ -72,7 +109,6 @@ export default function Friends() {
     setSearchResult(null);
 
     try {
-      // Look up username registry
       const usernameDoc = await getDoc(doc(db, 'usernames', query));
       if (!usernameDoc.exists()) {
         setSearchError('Player not found.');
@@ -80,12 +116,11 @@ export default function Friends() {
         return;
       }
 
-      // Found the UID, now get the user profile
-      const targetUid = usernameDoc.data().uid;
-      const profileDoc = await getDoc(doc(db, 'users', targetUid));
+      const foundUid = usernameDoc.data().uid;
+      const profileDoc = await getDoc(doc(db, 'users', foundUid));
       
       if (profileDoc.exists()) {
-        setSearchResult({ id: targetUid, ...profileDoc.data() });
+        setSearchResult({ id: foundUid, ...profileDoc.data() });
       } else {
         setSearchError('Player profile is missing.');
       }
@@ -97,95 +132,205 @@ export default function Friends() {
     }
   };
 
+  const onAddFriendFromSearch = async () => {
+    if (!searchResult) return;
+    if (searchResult.id === user.uid) {
+      triggerToast("You can't add yourself!");
+      return;
+    }
+    
+    try {
+      await sendFriendRequest(user.uid, searchResult.id);
+      triggerToast('Friend request sent!');
+      setSearchResult(null);
+      setSearchQuery('');
+    } catch(e) {
+      triggerToast('Failed to send request.');
+    }
+  };
+
+  const onAccept = async (friendshipId, otherUid) => {
+    await acceptFriendRequest(user.uid, otherUid);
+    setFriendships(prev => prev.map(f => f.id === friendshipId ? { ...f, status: 'accepted' } : f));
+    triggerToast('Friend added!');
+  };
+
+  const onRejectOrRemove = async (friendshipId, otherUid) => {
+    await removeFriendOrRequest(user.uid, otherUid);
+    setFriendships(prev => prev.filter(f => f.id !== friendshipId));
+  };
+
+  const acceptedFriends = friendships.filter(f => f.status === 'accepted');
+  const pendingRequests = friendships.filter(f => f.status === 'pending' && f.actionUser !== user.uid); // Received
+  const sentRequests = friendships.filter(f => f.status === 'pending' && f.actionUser === user.uid); // Sent
+
   return (
     <div className="friends-page">
       {toast && <div className="friends-toast anim-fade-in">{toast}</div>}
 
       <header className="friends-header">
-        <button className="back-btn" onClick={() => navigate('/')}>
+        <button className="back-btn" onClick={() => navigate(-1)}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <h1>Friends Hub</h1>
+        <h1>{isOwnView ? 'Friends Hub' : 'Friends'}</h1>
       </header>
 
-      <div className="friends-tabs">
-        <button className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`} onClick={() => setActiveTab('list')}>My Squad</button>
-        <button className={`tab-btn ${activeTab === 'search' ? 'active' : ''}`} onClick={() => setActiveTab('search')}>Add Friend</button>
-        <button className={`tab-btn ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>Requests</button>
-      </div>
+      {isOwnView && (
+        <div className="friends-tabs">
+          <button className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`} onClick={() => setActiveTab('list')}>My Squad</button>
+          <button className={`tab-btn ${activeTab === 'search' ? 'active' : ''}`} onClick={() => setActiveTab('search')}>Add Friend</button>
+          <button className={`tab-btn ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>
+            Requests {pendingRequests.length > 0 && <span className="req-badge">{pendingRequests.length}</span>}
+          </button>
+        </div>
+      )}
 
       <div className="friends-content anim-fade-in">
-        {activeTab === 'list' && (
-          <div className="friends-list-tab">
-            <div className="connect-contacts-card">
-              <div className="cc-icon">📱</div>
-              <div className="cc-text">
-                <h3>Build Your Squad</h3>
-                <p>Invite friends to easily see when they're hitting the courts.</p>
-              </div>
-              <button className="primary-btn" onClick={handleShareInvite}>Invite Friends</button>
-            </div>
-            
-            <div className="friends-empty-state">
-              <p>You haven't added any friends yet.</p>
-              <button className="secondary-btn" onClick={() => setActiveTab('search')}>Find Players</button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'search' && (
-          <div className="friends-search-tab">
-            <form className="friends-search-form" onSubmit={handleSearch}>
-              <div className="search-input-wrapper">
-                <span className="search-at">@</span>
-                <input 
-                  type="text" 
-                  placeholder="username" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <button type="submit" disabled={searching || !searchQuery.trim()} className="primary-btn search-submit-btn">
-                {searching ? '...' : 'Search'}
-              </button>
-            </form>
-
-            {searchError && <p className="search-error">{searchError}</p>}
-
-            {searchResult && (
-              <div className="search-result-card anim-scale-in">
-                <div className="sr-avatar">
-                  {searchResult.avatarUrl ? (
-                    <img src={searchResult.avatarUrl} alt="Avatar" />
-                  ) : (
-                    <div className="sr-avatar-placeholder">
-                      {searchResult.displayName?.substring(0,2).toUpperCase() || 'ATX'}
+        {loading ? (
+          <div className="friends-loading">Loading squad...</div>
+        ) : (
+          <>
+            {activeTab === 'list' && (
+              <div className="friends-list-tab">
+                {isOwnView && (
+                  <div className="connect-contacts-card">
+                    <div className="cc-icon">📱</div>
+                    <div className="cc-text">
+                      <h3>Build Your Squad</h3>
+                      <p>Invite friends to easily see when they're hitting the courts.</p>
                     </div>
-                  )}
-                </div>
-                <div className="sr-info">
-                  <h3>{searchResult.displayName}</h3>
-                  <span className="sr-username">@{searchResult.username}</span>
-                  <p className="sr-district">{searchResult.district}</p>
-                </div>
-                <button 
-                  className="primary-btn sr-add-btn" 
-                  onClick={() => triggerToast('Friend requests coming soon!')}
-                >
-                  Add
-                </button>
+                    <button className="primary-btn" onClick={handleShareInvite}>Invite Friends</button>
+                  </div>
+                )}
+                
+                {acceptedFriends.length === 0 ? (
+                  <div className="friends-empty-state">
+                    <p>{isOwnView ? "You haven't added any friends yet." : "This player hasn't added any friends yet."}</p>
+                    {isOwnView && <button className="secondary-btn" onClick={() => setActiveTab('search')}>Find Players</button>}
+                  </div>
+                ) : (
+                  <div className="friends-grid">
+                    {acceptedFriends.map(f => {
+                      const otherId = f.user1 === targetUid ? f.user2 : f.user1;
+                      const prof = profiles[otherId] || {};
+                      return (
+                        <div key={f.id} className="friend-card" onClick={() => navigate(`/profile/${otherId}`)}>
+                          <Avatar url={prof.avatarUrl} name={prof.displayName || 'Player'} size="medium" />
+                          <div className="fc-info">
+                            <h4>{prof.displayName || 'Player'}</h4>
+                            <span>@{prof.username || 'user'}</span>
+                          </div>
+                          {isOwnView && (
+                            <button className="fc-remove" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId); }}>
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {activeTab === 'requests' && (
-          <div className="friends-empty-state">
-            <p>No pending friend requests.</p>
-          </div>
+            {activeTab === 'search' && isOwnView && (
+              <div className="friends-search-tab">
+                <form className="friends-search-form" onSubmit={handleSearch}>
+                  <div className="search-input-wrapper">
+                    <span className="search-at">@</span>
+                    <input 
+                      type="text" 
+                      placeholder="username" 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <button type="submit" disabled={searching || !searchQuery.trim()} className="primary-btn search-submit-btn">
+                    {searching ? '...' : 'Search'}
+                  </button>
+                </form>
+
+                {searchError && <p className="search-error">{searchError}</p>}
+
+                {searchResult && (
+                  <div className="search-result-card anim-scale-in" onClick={() => navigate(`/profile/${searchResult.id}`)} style={{ cursor: 'pointer' }}>
+                    <div className="sr-avatar">
+                      <Avatar url={searchResult.avatarUrl} name={searchResult.displayName} size="large" />
+                    </div>
+                    <div className="sr-info">
+                      <h3>{searchResult.displayName}</h3>
+                      <span className="sr-username">@{searchResult.username}</span>
+                      <p className="sr-district">{searchResult.district}</p>
+                    </div>
+                    <button 
+                      className="primary-btn sr-add-btn" 
+                      onClick={(e) => { e.stopPropagation(); onAddFriendFromSearch(); }}
+                    >
+                      Send Request
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'requests' && isOwnView && (
+              <div className="friends-requests-tab">
+                <h3>Inbox</h3>
+                {pendingRequests.length === 0 ? (
+                  <div className="friends-empty-state">
+                    <p>No pending friend requests.</p>
+                  </div>
+                ) : (
+                  <div className="friends-grid">
+                    {pendingRequests.map(f => {
+                      const otherId = f.actionUser;
+                      const prof = profiles[otherId] || {};
+                      return (
+                        <div key={f.id} className="friend-card req-card" onClick={() => navigate(`/profile/${otherId}`)}>
+                          <Avatar url={prof.avatarUrl} name={prof.displayName || 'Player'} size="medium" />
+                          <div className="fc-info">
+                            <h4>{prof.displayName || 'Player'}</h4>
+                            <span>@{prof.username || 'user'}</span>
+                          </div>
+                          <div className="fc-actions">
+                            <button className="fc-accept" onClick={(e) => { e.stopPropagation(); onAccept(f.id, otherId); }}>Accept</button>
+                            <button className="fc-decline" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId); }}>Decline</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {sentRequests.length > 0 && (
+                  <>
+                    <h3 style={{ marginTop: '2rem' }}>Sent Requests</h3>
+                    <div className="friends-grid">
+                      {sentRequests.map(f => {
+                        const otherId = f.user1 === user.uid ? f.user2 : f.user1;
+                        const prof = profiles[otherId] || {};
+                        return (
+                          <div key={f.id} className="friend-card" onClick={() => navigate(`/profile/${otherId}`)}>
+                            <Avatar url={prof.avatarUrl} name={prof.displayName || 'Player'} size="medium" />
+                            <div className="fc-info">
+                              <h4>{prof.displayName || 'Player'}</h4>
+                              <span>@{prof.username || 'user'}</span>
+                            </div>
+                            <div className="fc-actions">
+                              <button className="fc-decline" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId); }}>Cancel</button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
