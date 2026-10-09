@@ -119,7 +119,9 @@ export default function AppRouter() {
           path="/create-game/:courtId"
           element={
             <ProtectedRoute>
-              <CreateGame />
+              <ErrorBoundary>
+                <CreateGame />
+              </ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -137,20 +139,22 @@ export default function AppRouter() {
           path="/onboarding"
           element={
             <ProtectedRoute>
-              <Onboarding />
+              <ErrorBoundary>
+                <Onboarding />
+              </ErrorBoundary>
             </ProtectedRoute>
           }
         />
         {/* Active games browser — public */}
-        <Route path="/active-games" element={<ActiveGames />} />
+        <Route path="/active-games" element={<ErrorBoundary><ActiveGames /></ErrorBoundary>} />
         {/* Leaderboard — public */}
-        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/leaderboard" element={<ErrorBoundary><Leaderboard /></ErrorBoundary>} />
         {/* District drill-down — public */}
-        <Route path="/district/:districtId" element={<DistrictCourts />} />
+        <Route path="/district/:districtId" element={<ErrorBoundary><DistrictCourts /></ErrorBoundary>} />
         {/* Court detail — public */}
-        <Route path="/court/:courtId" element={<CourtDetail />} />
-        <Route path="/friends" element={<Friends />} />
-        <Route path="/live-game/:gameId" element={<LiveGame />} />
+        <Route path="/court/:courtId" element={<ErrorBoundary><CourtDetail /></ErrorBoundary>} />
+        <Route path="/friends" element={<ErrorBoundary><Friends /></ErrorBoundary>} />
+        <Route path="/live-game/:gameId" element={<ErrorBoundary><LiveGame /></ErrorBoundary>} />
       </Routes>
     </BrowserRouter>
   );
