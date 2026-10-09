@@ -42,7 +42,15 @@ export default function LiveGame() {
 
   const handleSendChat = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user) return;
+    if (!newMessage.trim()) return;
+    if (!user || user.isAnonymous) {
+      if (window.confirm("You need to sign in to send messages. Go to Login?")) {
+        navigate(`/login?redirectTo=${encodeURIComponent(location.pathname)}`, {
+          state: { redirectTo: location.pathname }
+        });
+      }
+      return;
+    }
     
     await addDoc(collection(db, 'games', gameId, 'chat'), {
       text: newMessage.trim(),
@@ -92,8 +100,7 @@ export default function LiveGame() {
   const isCancelled = game.status === 'cancelled';
   const homeScore = game.score?.home || 0;
   const awayScore = game.score?.away || 0;
-  const isHost = user?.uid === game.createdBy || user?.uid === game.creatorId;
-
+  const isHost = Boolean(user?.uid) && (user.uid === game.createdBy || user.uid === game.creatorId);
   const handleBack = () => {
     if (window.history.length <= 2) {
       navigate(game?.courtId ? `/court/${game.courtId}` : '/');
@@ -183,7 +190,7 @@ export default function LiveGame() {
                 onChange={e => setNewMessage(e.target.value)}
                 className="lg-chat-input"
               />
-              <button type="submit" className="lg-chat-send" disabled={!newMessage.trim() || !user}>
+              <button type="submit" className="lg-chat-send" disabled={!newMessage.trim()}>
                  Send
               </button>
             </form>
