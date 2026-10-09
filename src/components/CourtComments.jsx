@@ -31,23 +31,37 @@ export default function CourtComments({ courtId }) {
   useEffect(() => {
     if (!courtId) return;
     
+    // Support aliases for courtId (e.g. mueller-hangar-browning, mueller-paggi-square, mueller-petanque)
+    const targetCourtIds = Array.from(new Set([
+      courtId,
+      ...(courtId.includes('mueller') ? ['mueller-hangar-browning', 'mueller-paggi-square', 'mueller-petanque'] : [])
+    ]));
+
     const q = query(
       collection(db, 'court_comments'),
-      where('courtId', '==', courtId),
-      orderBy('createdAt', 'desc')
+      where('courtId', 'in', targetCourtIds)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetched = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })).sort((a, b) => {
+        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0);
+        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0);
+        return timeB - timeA;
+      });
       setComments(fetched);
       setLoading(false);
     }, (err) => {
       console.error('Error fetching comments:', err);
-      // Wait for composite index or permission error
-      setLoading(false);
+      // Fallback query if 'in' fails
+      const fallbackQuery = query(collection(db, 'court_comments'), where('courtId', '==', courtId));
+      onSnapshot(fallbackQuery, (snap) => {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setComments(items);
+        setLoading(false);
+      }, () => setLoading(false));
     });
 
     return () => unsubscribe();

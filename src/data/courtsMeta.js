@@ -850,6 +850,15 @@ export const AUSTIN_COURTS_DATA = [
 
 
 export const getCartoonImageUrl = (courtId) => {
-  return `/assets/courts_v1/${courtId}.jpg`;
+  if (!courtId) return '/assets/courts_v1/mueller-browning-hangar.jpg';
+  
+  const COURT_IMAGE_MAP = {
+    'mueller-hangar-browning': '/assets/courts_v1/mueller-browning-hangar.jpg',
+    'mueller-paggi-square': '/assets/courts_v1/mueller-browning-hangar.jpg',
+    'mueller-petanque': '/assets/courts_v1/mueller-browning-hangar.jpg',
+    'alamo-pocket-park': '/assets/courts_v1/cherrywood-alamo-park.jpg',
+  };
+
+  return COURT_IMAGE_MAP[courtId] || `/assets/courts_v1/${courtId}.jpg`;
 };
 

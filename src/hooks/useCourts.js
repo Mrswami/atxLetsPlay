@@ -5,6 +5,24 @@ import { AUSTIN_COURTS_DATA } from '../data/courtsMeta';
 import { assertCanParticipate, assertReliable } from '../services/safety';
 import { useBlocked } from './useBlocked';
 
+// Helper map for canonical court array ordering
+const canonicalOrderMap = new Map();
+AUSTIN_COURTS_DATA.forEach((c, idx) => {
+  canonicalOrderMap.set(c.id, idx);
+  if (c.id === 'mueller-hangar-browning') {
+    canonicalOrderMap.set('mueller-paggi-square', idx);
+    canonicalOrderMap.set('mueller-petanque', idx);
+  }
+});
+
+const sortCourtsByCanonicalOrder = (courtList) => {
+  return [...courtList].sort((a, b) => {
+    const idxA = canonicalOrderMap.has(a.id) ? canonicalOrderMap.get(a.id) : 9999;
+    const idxB = canonicalOrderMap.has(b.id) ? canonicalOrderMap.get(b.id) : 9999;
+    return idxA - idxB;
+  });
+};
+
 // ─── Fetch all courts for a specific district ─────────────────────────────────
 export function useDistrictCourts(districtId) {
   const [courts, setCourts] = useState([]);
@@ -21,17 +39,18 @@ export function useDistrictCourts(districtId) {
     getDocs(q)
       .then((snap) => {
         if (!snap.empty) {
-          setCourts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+          const raw = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          setCourts(sortCourtsByCanonicalOrder(raw));
         } else {
           const fallback = AUSTIN_COURTS_DATA.filter((c) => c.district === districtId);
-          setCourts(fallback);
+          setCourts(sortCourtsByCanonicalOrder(fallback));
         }
         setLoading(false);
       })
       .catch((err) => {
         const fallback = AUSTIN_COURTS_DATA.filter((c) => c.district === districtId);
         if (fallback.length > 0) {
-          setCourts(fallback);
+          setCourts(sortCourtsByCanonicalOrder(fallback));
         } else {
           setError(err.message);
         }
