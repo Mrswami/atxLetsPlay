@@ -297,24 +297,6 @@ export const AUSTIN_COURTS_DATA = [
 
   // ── MUELLER ──
   {
-    id: 'mueller-paggi-square',
-    name: 'Paggi Square Park',
-    shortName: 'Paggi Square',
-    district: 'mueller',
-    sport: ['petanque'],
-    address: '2101 Robert Browning St, Austin, TX 78723',
-    coords: { lat: 30.3015, lng: -97.7032 },
-    surface: 'decomposed granite',
-    lights: true,
-    indoor: false,
-    accessibility: true,
-    amenities: ['grassy spectator hillside', 'seating', 'shade trees'],
-    courtCount: 2,
-    status: 'active',
-    description: 'Dedicated pétanque and bocce court in the heart of Mueller at Paggi Square Park. Features a decomposed granite surface and a grassy spectator hillside.',
-    googleMapsUrl: 'https://maps.google.com/?q=Paggi+Square+Park+Austin+TX',
-  },
-  {
     id: 'mueller-basketball-rec',
     name: 'Mueller Rec Center Courts',
     shortName: 'Mueller Rec',
@@ -332,7 +314,6 @@ export const AUSTIN_COURTS_DATA = [
     description: 'Four full outdoor basketball courts at Mueller Rec Center. Well-maintained with lighting for evening games.',
     googleMapsUrl: 'https://maps.google.com/?q=Mueller+Rec+Center+Austin+TX',
   },
-  
   {
     id: 'mueller-soccer',
     name: 'Mueller Park Soccer Fields',
@@ -368,6 +349,24 @@ export const AUSTIN_COURTS_DATA = [
     status: 'active',
     description: 'Modern neighborhood courts on the north side of Mueller with dedicated pickleball lines and shaded spectator benches.',
     googleMapsUrl: 'https://maps.google.com/?q=John+Gaines+Park+Mueller+Austin',
+  },
+  {
+    id: 'mueller-hangar-browning',
+    name: 'Mueller Hangar Browning Court',
+    shortName: 'Mueller Hangar Browning',
+    district: 'mueller',
+    sport: ['petanque'],
+    address: '2101 Robert Browning St, Austin, TX 78723',
+    coords: { lat: 30.3015, lng: -97.7032 },
+    surface: 'decomposed granite',
+    lights: true,
+    indoor: false,
+    accessibility: true,
+    amenities: ['grassy spectator hillside', 'seating', 'shade trees', 'historic hangar view'],
+    courtCount: 2,
+    status: 'active',
+    description: 'Dedicated pétanque and bocce court at the Mueller Hangar on Robert Browning St (Paggi Square). Features decomposed granite surface and grassy spectator hillside.',
+    googleMapsUrl: 'https://maps.google.com/?q=Paggi+Square+Park+Austin+TX',
   },
 
   // ── DOWNTOWN ──

@@ -55,7 +55,7 @@ export function useCourt(courtId) {
         if (snap.exists()) {
           setCourt({ id: snap.id, ...snap.data() });
         } else {
-          const fallback = AUSTIN_COURTS_DATA.find((c) => c.id === courtId);
+          const fallback = AUSTIN_COURTS_DATA.find((c) => c.id === courtId || (['mueller-paggi-square', 'mueller-petanque'].includes(courtId) && c.id === 'mueller-hangar-browning'));
           if (fallback) {
             setCourt(fallback);
           } else {
@@ -65,7 +65,7 @@ export function useCourt(courtId) {
         setLoading(false);
       })
       .catch((err) => {
-        const fallback = AUSTIN_COURTS_DATA.find((c) => c.id === courtId);
+        const fallback = AUSTIN_COURTS_DATA.find((c) => c.id === courtId || (['mueller-paggi-square', 'mueller-petanque'].includes(courtId) && c.id === 'mueller-hangar-browning'));
         if (fallback) {
           setCourt(fallback);
         } else {
