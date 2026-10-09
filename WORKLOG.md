@@ -49,6 +49,16 @@ Today's development sprint expanded ATX Let's Play into a full **Social Network 
 
 ---
 
+### Phase 7: Court Asset Synchronization, Comment Query Fix & Canonical Ordering
+- **Court Banner Image Sync**: Mapped `mueller-hangar-browning` to `/assets/courts_v1/mueller-browning-hangar.jpg` in `getCartoonImageUrl` to restore pixelized court hero headers.
+- **Unindexed Comment Query Fix**: Updated `CourtComments.jsx` to fetch using `where('courtId', 'in', targetCourtIds)` and sort comments in-memory by timestamp, eliminating missing composite index errors.
+- **Canonical District Court Ordering**: Implemented `sortCourtsByCanonicalOrder` in `useDistrictCourts` (`useCourts.js`), guaranteeing **Mueller Hangar Browning Court** is listed #4 when Mueller district is selected.
+- **Court Sync Protocol**: Standardized court ID aliases and asset resolution in `courtsMeta.js`, `useCourts.js`, and `scripts/validateCourts.mjs`.
+
+---
+
 ### Deployment & CI/CD
 - Verified build via `vite build`.
+- Pushed commit `d41c336` to GitHub (`origin/master`).
 - Deployed live hosting bundle to Firebase Hosting (`https://atxletsplay.web.app`).
+
