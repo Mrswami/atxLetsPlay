@@ -5,6 +5,7 @@ import NoShowPanel from '../components/NoShowPanel';
 import { useAuth } from '../contexts/AuthContext';
 import { SPORT_META, getCartoonImageUrl } from '../data/courtsMeta';
 import Loading from '../components/Loading';
+import CourtComments from '../components/CourtComments';
 import './CourtDetail.css';
 
 export default function CourtDetail() {
@@ -117,7 +118,7 @@ export default function CourtDetail() {
 
       {/* ── Tab Nav ── */}
       <div className="cd-tabs">
-        {['info', 'games'].map((tab) => (
+        {['info', 'games', 'community'].map((tab) => (
           <button
             key={tab}
             className={`cd-tab ${viewMode === tab ? 'active' : ''}`}
@@ -126,6 +127,7 @@ export default function CourtDetail() {
           >
             {tab === 'info' && '📋 Info'}
             {tab === 'games' && `🎮 Games${games.length > 0 ? ` (${games.length})` : ''}`}
+            {tab === 'community' && '💬 Community'}
           </button>
         ))}
       </div>
@@ -272,8 +274,14 @@ export default function CourtDetail() {
                     </div>
                   );
                 })}
-              </div>
             )}
+          </div>
+        )}
+
+        {/* COMMUNITY TAB */}
+        {viewMode === 'community' && (
+          <div className="cd-community-tab" style={{ padding: '0.5rem 0' }}>
+            <CourtComments courtId={courtId} />
           </div>
         )}
       </div>
