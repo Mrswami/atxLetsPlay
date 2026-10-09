@@ -15,39 +15,91 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
 
-  // If viewing own profile or another player's profile
-  const isOwnProfile = !uid || uid === user?.uid;
+  const [resolvedUid, setResolvedUid] = useState(null);
   const [targetProfile, setTargetProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  // Determine if viewing own profile
+  const isDirectOwnProfile = !uid || (user && uid === user.uid);
+  const isOwnProfile = isDirectOwnProfile || (user && resolvedUid === user.uid);
 
   useEffect(() => {
-    if (!isOwnProfile && uid) {
-      getDoc(doc(db, 'users', uid))
-        .then((snap) => {
-          if (snap.exists()) {
-            setTargetProfile(snap.data());
-          } else {
-            setTargetProfile({
-              displayName: 'Austin Baller',
-              district: 'mueller',
-              xp: 1450,
-              gamesPlayed: 12,
-              gamesHosted: 4,
-              rep: 4.9,
-              sport_preferences: ['basketball', 'soccer'],
-              badges: ['pioneer', 'good-sport'],
-            });
-          }
-        })
-        .catch((err) => {
-          console.warn('Error fetching target user profile:', err);
-        });
+    if (!uid) {
+      // Default to logged-in user
+      setResolvedUid(user?.uid || null);
+      setLoadingProfile(false);
+      return;
     }
-  }, [uid, isOwnProfile]);
 
-  const profile = isOwnProfile ? userProfile : targetProfile;
+    if (user && uid === user.uid) {
+      setResolvedUid(user.uid);
+      setLoadingProfile(false);
+      return;
+    }
 
-  // Reliability + report/block
-  const subjectUid = isOwnProfile ? user?.uid : uid;
+    setLoadingProfile(true);
+    const cleanParam = uid.replace(/^@/, '').trim();
+
+    // 1. Try fetching directly as a user UID
+    getDoc(doc(db, 'users', cleanParam))
+      .then(async (snap) => {
+        if (snap.exists()) {
+          setResolvedUid(cleanParam);
+          setTargetProfile(snap.data());
+          setLoadingProfile(false);
+        } else {
+          // 2. Try looking up as a username in the 'usernames' index
+          const usernameSnap = await getDoc(doc(db, 'usernames', cleanParam.toLowerCase()));
+          if (usernameSnap.exists() && usernameSnap.data()?.uid) {
+            const realUid = usernameSnap.data().uid;
+            setResolvedUid(realUid);
+            const realUserSnap = await getDoc(doc(db, 'users', realUid));
+            if (realUserSnap.exists()) {
+              setTargetProfile(realUserSnap.data());
+            } else {
+              setTargetProfile({
+                displayName: cleanParam,
+                username: cleanParam,
+                district: 'mueller',
+                xp: 1000,
+                rep: 5.0,
+                sport_preferences: ['basketball', 'petanque'],
+                badges: ['pioneer']
+              });
+            }
+          } else {
+            // 3. Fallback search by username query
+            const q = query(collection(db, 'users'), where('username', '==', cleanParam.toLowerCase()));
+            const qSnap = await getDocs(q);
+            if (!qSnap.empty) {
+              const d = qSnap.docs[0];
+              setResolvedUid(d.id);
+              setTargetProfile(d.data());
+            } else {
+              // Generic fallback player profile
+              setResolvedUid(cleanParam);
+              setTargetProfile({
+                displayName: cleanParam,
+                username: cleanParam,
+                district: 'mueller',
+                xp: 1200,
+                rep: 5.0,
+                sport_preferences: ['basketball', 'petanque'],
+                badges: ['pioneer']
+              });
+            }
+          }
+          setLoadingProfile(false);
+        }
+      })
+      .catch((err) => {
+        console.warn('Error fetching user profile:', err);
+        setLoadingProfile(false);
+      });
+  }, [uid, user]);
+
+  const profile = isOwnProfile ? (userProfile || targetProfile) : targetProfile;
+  const subjectUid = isOwnProfile ? user?.uid : resolvedUid;
   const blocked = useBlocked();
   const isBlocked = !!uid && blocked.has(uid);
   const [stats, setStats] = useState(null);
@@ -225,17 +277,25 @@ export default function Profile() {
   const earnedBadges = profile?.badges || ['pioneer', 'good-sport'];
   const prefSports = Array.isArray(profile?.sport_preferences) ? profile.sport_preferences : (profile?.sport_preferences ? [profile.sport_preferences] : ['basketball', 'soccer']);
 
+  const handleBack = () => {
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
+
   return (
     <div className="profile-page">
       {/* Header Navigation */}
       <header className="profile-header">
-        <button className="profile-back-btn" onClick={() => navigate('/')} aria-label="Go home">
+        <button className="profile-back-btn" onClick={handleBack} aria-label="Go back">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <h1>Player Profile</h1>
-        {isOwnProfile && (
+        <h1>{isOwnProfile ? 'My Profile' : `${displayName}'s Profile`}</h1>
+        {isOwnProfile ? (
           <button
             className="profile-edit-btn"
             onClick={() => navigate('/settings')}
@@ -243,19 +303,34 @@ export default function Profile() {
           >
             <span>⚙️</span> Edit
           </button>
+        ) : (
+          <button 
+            className="profile-edit-btn" 
+            onClick={() => navigate('/friends')}
+            title="Friends Hub"
+          >
+            <span>👥</span> Squad
+          </button>
         )}
       </header>
 
       <div className="profile-container">
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-          <button 
-            className="action-btn" 
-            style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', background: 'var(--surface-elevated)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}
-            onClick={() => navigate('/', { state: { viewMode: 'dashboard' } })}
-          >
-            <span>📊</span> Go to Live Dashboard
-          </button>
-        </div>
+        {isOwnProfile ? (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+            <button 
+              className="action-btn" 
+              style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', background: 'var(--surface-elevated)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}
+              onClick={() => navigate('/', { state: { viewMode: 'dashboard' } })}
+            >
+              <span>📊</span> Go to Live Dashboard
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', padding: '8px 14px', background: 'rgba(34, 211, 102, 0.08)', border: '1px solid rgba(34, 211, 102, 0.25)', borderRadius: '12px', fontSize: '0.82rem', color: 'var(--accent-primary)', fontWeight: '600' }}>
+            <span>👀 Viewing Player Card</span>
+            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.78rem' }}>Austin Community</span>
+          </div>
+        )}
 
         {/* User Card */}
         <div className="profile-card">

@@ -159,6 +159,8 @@ export default function LiveGame() {
         return (
           <span
             key={i}
+            role="button"
+            tabIndex={0}
             className="lg-mention-chip"
             style={{
               backgroundColor: `${color}22`,
@@ -166,6 +168,7 @@ export default function LiveGame() {
               borderColor: `${color}66`
             }}
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               if (targetUid) {
                 navigate(`/profile/${targetUid}`);
@@ -173,6 +176,8 @@ export default function LiveGame() {
                 const found = Object.values(userProfilesMap).find(p => p.username?.toLowerCase() === lowerHandle);
                 if (found?.uid) {
                   navigate(`/profile/${found.uid}`);
+                } else {
+                  navigate(`/profile/${lowerHandle}`);
                 }
               }
             }}

@@ -128,6 +128,16 @@ export default function AppRouter() {
           }
         />
         <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ErrorBoundary>
+                <Profile />
+              </ErrorBoundary>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/profile/:uid"
           element={
             <ProtectedRoute>
