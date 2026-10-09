@@ -38,6 +38,7 @@ import CourtDetail from './pages/CourtDetail';
 import CreateGame from './pages/CreateGame';
 import ActiveGames from './pages/ActiveGames';
 import Profile from './pages/Profile';
+import CourtInviteBanner from './components/CourtInviteBanner';
 import Friends from './pages/Friends';
 import Leaderboard from './pages/Leaderboard';
 import Onboarding from './pages/Onboarding';
@@ -99,6 +100,7 @@ export default function AppRouter() {
 
   return (
     <BrowserRouter>
+      <CourtInviteBanner />
       <Routes>
         <Route path="/login" element={<Login />} />
         {/* Home & World are open to everyone — no sign-in wall */}

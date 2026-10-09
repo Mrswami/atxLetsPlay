@@ -1,0 +1,96 @@
+.court-invite-banner {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 2rem);
+  max-width: 440px;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border: 1.5px solid var(--accent-primary);
+  border-radius: 20px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(34, 211, 102, 0.25);
+  z-index: 11000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: cibSlideDown 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes cibSlideDown {
+  0% { opacity: 0; transform: translate(-50%, -30px) scale(0.95); }
+  100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.cib-content {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.cib-icon {
+  font-size: 2rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(34, 211, 102, 0.15);
+  border: 1px solid rgba(34, 211, 102, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cib-info h4 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--accent-primary);
+  margin-bottom: 0.2rem;
+}
+
+.cib-info p {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.cib-actions {
+  display: flex;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.cib-actions button {
+  flex: 1;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  font-family: var(--font-display);
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.cib-accept-btn {
+  background: var(--accent-primary);
+  color: #000;
+  box-shadow: 0 4px 12px rgba(34, 211, 102, 0.3);
+}
+
+.cib-accept-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.cib-decline-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+}
+
+.cib-decline-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+}

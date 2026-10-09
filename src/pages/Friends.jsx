@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
 import { getUserFriendships, sendFriendRequest, acceptFriendRequest, removeFriendOrRequest } from '../services/friends';
+import { subscribeToUserInvites, respondToInvite } from '../services/invites';
+import { joinGame } from '../hooks/useCourts';
 import { generateDefaultUsername } from '../utils/usernameGenerator';
 import Avatar from '../components/Avatar';
 import './Friends.css';
@@ -50,6 +52,34 @@ export default function Friends() {
   const triggerToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
+  };
+
+  const [courtInvites, setCourtInvites] = useState([]);
+
+  useEffect(() => {
+    if (!user || user.isAnonymous) return;
+    const unsub = subscribeToUserInvites(user.uid, (invs) => {
+      setCourtInvites(invs);
+    });
+    return unsub;
+  }, [user]);
+
+  const handleAcceptCourtInvite = async (invite) => {
+    try {
+      await joinGame(invite.gameId, user.uid);
+      await respondToInvite(invite.id, true);
+      triggerToast('Joined court match!');
+      navigate(`/live-game/${invite.gameId}`);
+    } catch (e) {
+      await respondToInvite(invite.id, true).catch(() => {});
+      navigate(`/live-game/${invite.gameId}`);
+    }
+  };
+
+  const handleDeclineCourtInvite = async (inviteId) => {
+    await respondToInvite(inviteId, false);
+    setCourtInvites(prev => prev.filter(i => i.id !== inviteId));
+    triggerToast('Invite declined.');
   };
 
   useEffect(() => {
@@ -184,7 +214,7 @@ export default function Friends() {
           <button className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`} onClick={() => setActiveTab('list')}>My Squad</button>
           <button className={`tab-btn ${activeTab === 'search' ? 'active' : ''}`} onClick={() => setActiveTab('search')}>Add Friend</button>
           <button className={`tab-btn ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>
-            Requests {pendingRequests.length > 0 && <span className="req-badge">{pendingRequests.length}</span>}
+            Requests {(pendingRequests.length + courtInvites.length) > 0 && <span className="req-badge">{pendingRequests.length + courtInvites.length}</span>}
           </button>
         </div>
       )}
@@ -281,10 +311,31 @@ export default function Friends() {
 
             {activeTab === 'requests' && isOwnView && (
               <div className="friends-requests-tab">
-                <h3>Inbox</h3>
+                {courtInvites.length > 0 && (
+                  <div style={{ marginBottom: '2rem' }}>
+                    <h3 style={{ color: 'var(--accent-primary)' }}>🏟️ Court Invites & Mentions</h3>
+                    <div className="friends-grid">
+                      {courtInvites.map(inv => (
+                        <div key={inv.id} className="friend-card req-card" style={{ border: '1px solid var(--accent-primary)', background: 'linear-gradient(145deg, #1e293b, #0f172a)' }}>
+                          <Avatar url={inv.senderAvatar} name={inv.senderName} size="medium" />
+                          <div className="fc-info">
+                            <h4>{inv.courtName}</h4>
+                            <span style={{ color: 'var(--accent-primary)', fontWeight: '600' }}>@{inv.senderUsername || inv.senderName} • {inv.sport}</span>
+                          </div>
+                          <div className="fc-actions">
+                            <button className="fc-accept" onClick={(e) => { e.stopPropagation(); handleAcceptCourtInvite(inv); }}>Join Match</button>
+                            <button className="fc-decline" onClick={(e) => { e.stopPropagation(); handleDeclineCourtInvite(inv.id); }}>Decline</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <h3>Friend Requests Inbox</h3>
                 {pendingRequests.length === 0 ? (
                   <div className="friends-empty-state">
-                    <p>No pending friend requests.</p>
+                    <p>{courtInvites.length > 0 ? "No pending friend requests." : "No pending friend requests or court invites."}</p>
                   </div>
                 ) : (
                   <div className="friends-grid">

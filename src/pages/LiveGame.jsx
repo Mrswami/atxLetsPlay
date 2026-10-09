@@ -5,6 +5,7 @@ import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
 import { getCartoonImageUrl } from '../data/courtsMeta';
 import { generateDefaultUsername } from '../utils/usernameGenerator';
+import { processChatMentions } from '../services/invites';
 import Avatar from '../components/Avatar';
 import './LiveGame.css';
 
@@ -18,6 +19,8 @@ export default function LiveGame() {
   const [newMessage, setNewMessage] = useState('');
   const [hearts, setHearts] = useState([]);
   const [userProfilesMap, setUserProfilesMap] = useState({});
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionFilter, setSuggestionFilter] = useState('');
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -56,6 +59,26 @@ export default function LiveGame() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
+  const handleChatInputChange = (e) => {
+    const val = e.target.value;
+    setNewMessage(val);
+    const lastWord = val.split(/\s+/).pop();
+    if (lastWord && lastWord.startsWith('@')) {
+      setSuggestionFilter(lastWord.slice(1).toLowerCase());
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSelectSuggestion = (username) => {
+    const words = newMessage.split(/\s+/);
+    words.pop();
+    const updated = [...words.filter(Boolean), `@${username}`].join(' ') + ' ';
+    setNewMessage(updated);
+    setShowSuggestions(false);
+  };
+
   const handleSendChat = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -69,15 +92,25 @@ export default function LiveGame() {
     }
     
     const activeUsername = userProfile?.username || generateDefaultUsername(userProfile?.displayName || user.displayName, user.uid);
+    const textToSend = newMessage.trim();
+    setNewMessage('');
+    setShowSuggestions(false);
 
     await addDoc(collection(db, 'games', gameId, 'chat'), {
-      text: newMessage.trim(),
+      text: textToSend,
       senderId: user.uid,
       senderName: userProfile?.displayName || user.displayName || 'Guest Player',
       senderUsername: activeUsername,
       createdAt: serverTimestamp()
     });
-    setNewMessage('');
+
+    // Process mentions to create court invite notifications
+    processChatMentions(textToSend, {
+      uid: user.uid,
+      displayName: userProfile?.displayName || user.displayName,
+      username: activeUsername,
+      avatarUrl: userProfile?.avatarUrl || user.photoURL,
+    }, game);
   };
 
   const handleSendHeart = () => {
@@ -229,13 +262,30 @@ export default function LiveGame() {
         </div>
         
         {!isOver && !isCancelled && (
-          <div className="lg-chat-actions">
+          <div className="lg-chat-actions" style={{ position: 'relative' }}>
+            {showSuggestions && (
+              <div className="lg-suggestions-popup">
+                {Object.values(userProfilesMap)
+                  .filter(p => p.username && p.username.toLowerCase().includes(suggestionFilter))
+                  .slice(0, 5)
+                  .map(p => (
+                    <div 
+                      key={p.uid || p.username} 
+                      className="lg-suggestion-item" 
+                      onClick={() => handleSelectSuggestion(p.username)}
+                    >
+                      <span className="lsi-name">{p.displayName}</span>
+                      <span className="lsi-handle">@{p.username}</span>
+                    </div>
+                  ))}
+              </div>
+            )}
             <form onSubmit={handleSendChat} className="lg-chat-form">
               <input 
                 type="text" 
-                placeholder="Chat..." 
+                placeholder="Chat or type @username to tag..." 
                 value={newMessage}
-                onChange={e => setNewMessage(e.target.value)}
+                onChange={handleChatInputChange}
                 className="lg-chat-input"
               />
               <button type="submit" className="lg-chat-send" disabled={!newMessage.trim()}>

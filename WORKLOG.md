@@ -64,9 +64,18 @@ Today's development sprint expanded ATX Let's Play into a full **Social Network 
 
 ---
 
+### Phase 9: @Mention Court Invites & Real-Time Notification System
+- **@Mention Parser & Invites Service**: Created `src/services/invites.js` (`processChatMentions`, `subscribeToUserInvites`, `respondToInvite`) to automatically turn chat `@mentions` into interactive court invites in Firestore.
+- **Slide-in Court Invite Banner**: Created `CourtInviteBanner.jsx` & `CourtInviteBanner.css` rendered globally in `router.jsx`. When tagged, a slide-down banner provides 1-click **Accept & Join Match** (joins game + opens live chat room).
+- **Friends Hub Invites Inbox**: Integrated court invites into `Friends.jsx` Requests tab with real-time badge counters and match joining.
+- **Chat Autocomplete**: Added `@mention` autocomplete suggestion popup to `LiveGame.jsx` & `LiveGame.css`.
+
+---
+
 ### Deployment & CI/CD
 - Verified build via `vite build`.
 - Pushed updates to GitHub (`origin/master`).
 - Deployed live hosting bundle to Firebase Hosting (`https://atxletsplay.web.app`).
+
 
 
