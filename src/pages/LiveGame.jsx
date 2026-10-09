@@ -94,10 +94,18 @@ export default function LiveGame() {
   const awayScore = game.score?.away || 0;
   const isHost = user?.uid === game.createdBy || user?.uid === game.creatorId;
 
+  const handleBack = () => {
+    if (window.history.length <= 2) {
+      navigate(game?.courtId ? `/court/${game.courtId}` : '/');
+    } else {
+      navigate(-1);
+    }
+  };
+
   return (
     <div className="live-game-page">
       <header className="live-game-header">
-        <button className="lg-back-btn" onClick={() => navigate(-1)}>
+        <button className="lg-back-btn" onClick={handleBack}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
              <polyline points="15 18 9 12 15 6" />
           </svg>
