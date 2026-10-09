@@ -303,21 +303,38 @@ export default function Profile() {
             ) : matchHistory.length === 0 ? (
               <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1rem', background: 'var(--surface-elevated)', borderRadius: '12px' }}>No games played yet.</div>
             ) : (
-              matchHistory.map(game => (
-                <div key={game.id} className="profile-history-card" style={{ background: 'var(--surface-elevated)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate(`/live-game/${game.id}`)}>
-                  <div>
-                    <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '4px' }}>
-                      {SPORT_META[game.sport]?.emoji} {AUSTIN_COURTS_DATA.find(c => c.id === game.courtId)?.name || 'Austin Court'}
+              matchHistory.map(game => {
+                const durationMs = (game.duration || 2) * 60 * 60 * 1000;
+                const schedTime = game.scheduledTime?.toMillis ? game.scheduledTime.toMillis() : Date.now();
+                const isOver = Date.now() >= schedTime + durationMs || game.status === 'cancelled' || game.status === 'completed';
+                
+                return (
+                  <div key={game.id} className="profile-history-card" style={{ 
+                    background: isOver ? 'transparent' : 'var(--surface-elevated)', 
+                    border: isOver ? '1px dashed var(--glass-border)' : '1px solid var(--glass-border)', 
+                    opacity: isOver ? 0.5 : 1, 
+                    borderRadius: '12px', 
+                    padding: '12px 16px', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    cursor: 'pointer', 
+                    filter: isOver ? 'grayscale(1)' : 'none' 
+                  }} onClick={() => navigate(`/live-game/${game.id}`)}>
+                    <div>
+                      <div style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                        {SPORT_META[game.sport]?.emoji} {AUSTIN_COURTS_DATA.find(c => c.id === game.courtId)?.name || 'Austin Court'}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {game.scheduledTime?.toMillis ? new Date(game.scheduledTime.toMillis()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Unknown Time'} • {isOver ? 'Played' : (game.status === 'open' ? 'Active' : 'Completed')}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {game.scheduledTime?.toMillis ? new Date(game.scheduledTime.toMillis()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Unknown Time'} • {game.status === 'open' ? 'Active' : 'Completed'}
+                    <div style={{ color: game.createdBy === subjectUid ? (isOver ? 'var(--text-secondary)' : 'var(--accent-primary)') : 'var(--text-secondary)', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                      {game.createdBy === subjectUid ? 'Hosted' : 'Joined'}
                     </div>
                   </div>
-                  <div style={{ color: game.createdBy === subjectUid ? 'var(--accent-primary)' : 'var(--text-secondary)', fontWeight: 'bold', fontSize: '0.85rem' }}>
-                    {game.createdBy === subjectUid ? 'Hosted' : 'Joined'}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

@@ -22,6 +22,7 @@ export default function CreateGame() {
     return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
   };
   const [scheduledTime, setScheduledTime] = useState(formatForInput(new Date()));
+  const [duration, setDuration] = useState('2');
   const [maxPlayers, setMaxPlayers] = useState('10');
   const [skillLevel, setSkillLevel] = useState('casual');
   const [subCourt, setSubCourt] = useState('');
@@ -109,6 +110,7 @@ export default function CreateGame() {
         creatorName: userProfile?.displayName || user?.displayName || 'Player',
         status: 'open',
         scheduledTime: Timestamp.fromDate(dateObj),
+        duration: parseInt(duration, 10),
         maxPlayers: parsedMax,
         currentPlayers: [user.uid],
         skillLevel,
@@ -213,6 +215,22 @@ export default function CreateGame() {
               onClick={(e) => { if (e.target.showPicker) e.target.showPicker(); }}
               required
             />
+          </div>
+
+          {/* Duration */}
+          <div className="form-group">
+            <label htmlFor="cg-duration">Duration *</label>
+            <select
+              id="cg-duration"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              required
+            >
+              <option value="1">1 Hour</option>
+              <option value="2">2 Hours</option>
+              <option value="3">3 Hours</option>
+              <option value="4">4 Hours</option>
+            </select>
           </div>
 
           {/* Sub-Court Selection */}
