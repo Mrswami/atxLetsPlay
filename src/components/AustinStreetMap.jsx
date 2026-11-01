@@ -110,15 +110,11 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
         subdomains: 'abcd',
       }).addTo(map);
 
-      // Track zoom changes
-      map.on('zoomend', () => {
-        setCurrentZoom(map.getZoom());
-      });
-
       // Initialize empty layer group for courts
       layerGroupRef.current = L.layerGroup().addTo(map);
 
       // Fetch and Overlay Austin Council Districts as colored cartoon zones
+      const districtLayers = [];
       if (mapInstanceRef.current) {
         L.geoJSON(AUSTIN_DISTRICTS_GEOJSON, {
           style: (feature) => {
@@ -131,11 +127,17 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
             };
           },
           onEachFeature: (feature, layer) => {
-            // Add a permanent cartoon label to the district center
+            // Add a permanent cartoon label to the district center (retained across all zoom levels)
             layer.bindTooltip(
-              `<div style="font-weight:900;font-size:16px;color:${feature.properties.color};text-shadow:1px 1px 0 #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff;font-family:'Fredoka',sans-serif;">${feature.properties.name}</div>`,
+              `<div class="asm-district-label-text" style="font-weight:900;font-size:16px;color:${feature.properties.color};text-shadow:2px 2px 0 #fff,-2px -2px 0 #fff,2px -2px 0 #fff,-2px 2px 0 #fff,0 2px 8px rgba(255,255,255,0.95);font-family:'Fredoka',sans-serif;white-space:nowrap;">${feature.properties.name}</div>`,
               { permanent: true, direction: 'center', className: 'district-label-tooltip' }
             );
+
+            districtLayers.push({
+              feature,
+              layer,
+              naturalCenter: layer.getBounds().getCenter(),
+            });
             
             // On Click: Zoom map to fit this specific area and its courts
             layer.on('click', (e) => {
@@ -147,6 +149,53 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
           }
         }).addTo(mapInstanceRef.current);
       }
+
+      const updateDistrictLabelPositions = () => {
+        if (!mapInstanceRef.current) return;
+        const currentMap = mapInstanceRef.current;
+        const rawBounds = currentMap.getBounds();
+        const latSpan = rawBounds.getNorth() - rawBounds.getSouth();
+        const lngSpan = rawBounds.getEast() - rawBounds.getWest();
+
+        // Inset viewport bounds so labels stay clear of top search bar and bottom nav bars when zoomed in
+        const vSouth = rawBounds.getSouth() + latSpan * 0.18;
+        const vNorth = rawBounds.getNorth() - latSpan * 0.12;
+        const vWest = rawBounds.getWest() + lngSpan * 0.10;
+        const vEast = rawBounds.getEast() - lngSpan * 0.10;
+
+        districtLayers.forEach(({ feature, layer, naturalCenter }) => {
+          const tooltip = layer.getTooltip();
+          if (!tooltip) return;
+          const polyBounds = layer.getBounds().pad(-0.08);
+          if (!rawBounds.intersects(polyBounds)) {
+            tooltip.setLatLng(naturalCenter);
+            return;
+          }
+          const iSouth = Math.max(polyBounds.getSouth(), vSouth);
+          const iNorth = Math.min(polyBounds.getNorth(), vNorth);
+          const iWest = Math.max(polyBounds.getWest(), vWest);
+          const iEast = Math.min(polyBounds.getEast(), vEast);
+
+          if (iSouth <= iNorth && iWest <= iEast) {
+            let lat = Math.min(Math.max(naturalCenter.lat, iSouth), iNorth);
+            let lng = Math.min(Math.max(naturalCenter.lng, iWest), iEast);
+            // Keep L-shaped West Austin / Zilker label outside the Downtown cutout
+            if (feature.properties.name === 'West Austin / Zilker' && lat < 30.285 && lng > -97.758) {
+              lng = Math.min(-97.762, iEast);
+            }
+            tooltip.setLatLng([lat, lng]);
+          } else {
+            tooltip.setLatLng(naturalCenter);
+          }
+        });
+      };
+
+      // Track zoom & pan changes and keep region names visible inside zoomed viewport
+      map.on('zoomend moveend', () => {
+        setCurrentZoom(map.getZoom());
+        updateDistrictLabelPositions();
+      });
+      updateDistrictLabelPositions();
     }
 
     initLeafletMap();
@@ -316,39 +365,7 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
           {isSearching && <span className="asm-spinner" />}
         </form>
 
-        {/* Category Pills */}
-        <div className="asm-category-pills">
-          <button
-            className={`asm-pill ${activeCategory === 'all' ? 'active' : ''}`}
-            onClick={() => handleCategoryFilter('all')}
-          >
-            All Places
-          </button>
-          <button
-            className={`asm-pill ${activeCategory === 'court' ? 'active' : ''}`}
-            onClick={() => handleCategoryFilter('court')}
-          >
-            🏀 Courts
-          </button>
-          <button
-            className={`asm-pill ${activeCategory === 'market' ? 'active' : ''}`}
-            onClick={() => handleCategoryFilter('market')}
-          >
-            🛒 Markets
-          </button>
-          <button
-            className={`asm-pill ${activeCategory === 'music' ? 'active' : ''}`}
-            onClick={() => handleCategoryFilter('music')}
-          >
-            🎵 Venues
-          </button>
-          <button
-            className={`asm-pill ${activeCategory === 'landmark' ? 'active' : ''}`}
-            onClick={() => handleCategoryFilter('landmark')}
-          >
-            🏛️ Landmarks
-          </button>
-        </div>
+
       </div>
 
       {/* Map Leaflet Container */}
@@ -358,29 +375,105 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
 
 
 
+      {/* Quick Drawer Tabs Bar on Map */}
+      <div className="asm-map-floating-tabs">
+        <button
+          className={`asm-map-tab-btn ${activeDistrictZone === 'North Austin / Mueller' ? 'active' : ''}`}
+          onClick={() => setActiveDistrictZone('North Austin / Mueller')}
+          id="asm-tab-mueller"
+        >
+          🌳 Mueller Courts
+        </button>
+        <button
+          className={`asm-map-tab-btn ${activeDistrictZone === 'Downtown' ? 'active' : ''}`}
+          onClick={() => setActiveDistrictZone('Downtown')}
+          id="asm-tab-downtown"
+        >
+          🏙️ Downtown
+        </button>
+        <button
+          className={`asm-map-tab-btn ${activeDistrictZone === 'West Austin / Zilker' ? 'active' : ''}`}
+          onClick={() => setActiveDistrictZone('West Austin / Zilker')}
+          id="asm-tab-zilker"
+        >
+          🏊 Zilker
+        </button>
+        <button
+          className={`asm-map-tab-btn ${activeDistrictZone === 'East Austin' ? 'active' : ''}`}
+          onClick={() => setActiveDistrictZone('East Austin')}
+          id="asm-tab-east"
+        >
+          🎨 East ATX
+        </button>
+      </div>
+
       {/* Slide-out District Sidebar */}
       {activeDistrictZone && (
         <>
           <style>{`
             .view-mode-floating-bar { display: none !important; }
             .asm-item-icon .cartoon-marker-img { width: 64px !important; height: 64px !important; border-radius: 50%; }
-            .asm-sidebar-header button { font-weight: bold; background: rgba(0,0,0,0.1); padding: 8px 12px; border-radius: 20px; border: none; cursor: pointer; }
+            .asm-sidebar-header { padding: 80px 20px 15px 20px !important; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+            .asm-back-to-map-btn { background: #0f172a !important; color: white !important; padding: 12px 20px !important; border-radius: 12px !important; border: none; cursor: pointer; font-size: 1.1rem !important; font-weight: 800 !important; width: 100%; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.2s, background 0.2s; }
+            .asm-back-to-map-btn:hover { transform: translateY(-2px); background: #1e293b !important; }
+            .asm-drawer-district-tabs { display: flex; gap: 6px; overflow-x: auto; width: 100%; padding-bottom: 6px; scrollbar-width: none; }
+            .asm-drawer-district-tabs::-webkit-scrollbar { display: none; }
+            .asm-drawer-tab { padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+            .asm-drawer-tab.active { background: #06b6d4; color: white; border-color: #06b6d4; box-shadow: 0 2px 6px rgba(6,182,212,0.3); }
+            .asm-badge-new-venue { background: linear-gradient(135deg, #06b6d4, #10b981); color: white; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 6px; margin-left: 6px; vertical-align: middle; }
+            .asm-highlight-card { border-left: 4px solid #06b6d4 !important; background: #f0fdfa !important; }
           `}</style>
           <div className="asm-district-sidebar">
             <div className="asm-sidebar-header">
+              <button className="asm-back-to-map-btn" onClick={() => setActiveDistrictZone(null)}>
+                ← Back to Map
+              </button>
               <h2>{activeDistrictZone} Courts</h2>
-              <button onClick={() => setActiveDistrictZone(null)}>← Back to Map</button>
+              
+              {/* Drawer District Tabs */}
+              <div className="asm-drawer-district-tabs">
+                {[
+                  { id: 'North Austin / Mueller', label: '🌳 Mueller / North' },
+                  { id: 'Downtown', label: '🏙️ Downtown' },
+                  { id: 'West Austin / Zilker', label: '🏊 West / Zilker' },
+                  { id: 'East Austin', label: '🎨 East Austin' },
+                  { id: 'South Austin', label: '🌲 South Austin' },
+                ].map((dt) => (
+                  <button
+                    key={dt.id}
+                    className={`asm-drawer-tab ${activeDistrictZone === dt.id ? 'active' : ''}`}
+                    onClick={() => setActiveDistrictZone(dt.id)}
+                  >
+                    {dt.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="asm-sidebar-list">
-              {AUSTIN_COURTS_DATA.filter(c => getCartoonZone(c.district) === activeDistrictZone).map(court => (
-                <div key={court.id} className="asm-sidebar-item" onClick={() => { if (onPlaceSelect) onPlaceSelect({ id: court.id, category: 'court' }); }}>
-                  <span className="asm-item-icon" dangerouslySetInnerHTML={{ __html: getCartoonIcon(court.id) }}></span>
-                  <div className="asm-item-info">
-                    <h4>{court.name}</h4>
-                    <span>{court.sport.map(s => SPORT_META[s]?.label || s).join(' · ')}</span>
+              {AUSTIN_COURTS_DATA.filter(c => getCartoonZone(c.district) === activeDistrictZone).map(court => {
+                const isMuellerEastLawn = court.id === 'mueller-lake-park-east-lawn';
+                return (
+                  <div
+                    key={court.id}
+                    className={`asm-sidebar-item ${isMuellerEastLawn ? 'asm-highlight-card' : ''}`}
+                    onClick={() => { if (onPlaceSelect) onPlaceSelect({ id: court.id, category: 'court' }); }}
+                  >
+                    <span className="asm-item-icon" dangerouslySetInnerHTML={{ __html: getCartoonIcon(court.id) }}></span>
+                    <div className="asm-item-info">
+                      <h4>
+                        {court.name}
+                        {isMuellerEastLawn && <span className="asm-badge-new-venue">✨ NEW VENUE</span>}
+                      </h4>
+                      <span>{court.sport.map(s => SPORT_META[s]?.label || s).join(' · ')}</span>
+                      {isMuellerEastLawn && (
+                        <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#047857', fontWeight: 600 }}>
+                          Volleyball, footvolley & spikeball weekly gathering spot
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {/* Court Missing Button */}
               <div style={{ padding: '1rem 0', marginTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
                 <button
