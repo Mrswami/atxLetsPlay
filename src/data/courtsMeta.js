@@ -1,17 +1,34 @@
 // ATX Let's Play — Court data (client-safe, comprehensive Austin sports courts)
 // Covers all key Austin neighborhoods: Wampus, Hyde Park, Tarrytown, Cherrywood,
 // Windsor, Mueller, Downtown, Zilker, E Cesar Chavez, and South/290.
+import { NEW_VENUES_DATA } from './newCourtsData.js';
 
 export const SPORT_META = {
   basketball: { label: 'Basketball', emoji: '🏀', color: '#f97316' },
   tennis: { label: 'Tennis', emoji: '🎾', color: '#eab308' },
   pickleball: { label: 'Pickleball', emoji: '🏓', color: '#06b6d4' },
+  padel: { label: 'Padel', emoji: '🎾', color: '#3b82f6' },
   volleyball: { label: 'Volleyball', emoji: '🏐', color: '#8b5cf6' },
   soccer: { label: 'Soccer', emoji: '⚽', color: '#22d366' },
+  futsal: { label: 'Futsal', emoji: '⚽', color: '#10b981' },
+  'indoor-soccer': { label: 'Indoor Soccer', emoji: '⚽', color: '#059669' },
+  badminton: { label: 'Badminton', emoji: '🏸', color: '#ec4899' },
+  racquetball: { label: 'Racquetball', emoji: '🎾', color: '#f59e0b' },
+  squash: { label: 'Squash', emoji: '⚪', color: '#6366f1' },
+  handball: { label: 'Handball', emoji: '🤾', color: '#ef4444' },
+  lacrosse: { label: 'Lacrosse', emoji: '🥍', color: '#14b8a6' },
+  cricket: { label: 'Cricket', emoji: '🏏', color: '#84cc16' },
+  'table-tennis': { label: 'Table Tennis', emoji: '🏓', color: '#f43f5e' },
+  bowling: { label: 'Bowling', emoji: '🎳', color: '#a855f7' },
+  'roller-skating': { label: 'Roller Skating', emoji: '🛼', color: '#e11d48' },
+  'roller-derby': { label: 'Roller Derby', emoji: '🛼', color: '#db2777' },
+  footvolley: { label: 'Footvolley', emoji: '🏖️', color: '#fbbf24' },
+  spikeball: { label: 'Spikeball / Roundnet', emoji: '🟡', color: '#eab308' },
   'disc-golf': { label: 'Disc Golf', emoji: '🥏', color: '#10b981' },
   petanque: { label: 'Pétanque', emoji: '🥌', color: '#a78bfa' },
   baseball: { label: 'Baseball', emoji: '⚾', color: '#ef4444' },
   softball: { label: 'Softball', emoji: '🥎', color: '#f43f5e' },
+  floorball: { label: 'Floorball', emoji: '🏒', color: '#06b6d4' },
 };
 
 export const DISTRICT_META = {
@@ -217,6 +234,25 @@ export const AUSTIN_COURTS_DATA = [
     status: 'active',
     description: 'Historic Tarrytown park with shaded tennis courts alongside Taylor Slough spring. Great morning playing spot.',
     googleMapsUrl: 'https://maps.google.com/?q=Reed+Neighborhood+Park+Austin',
+  },
+  {
+    id: 'caswell-tennis-center',
+    name: 'Caswell Tennis Center',
+    shortName: 'Caswell Tennis',
+    district: 'tarry',
+    sport: ['tennis'],
+    address: '2312 Shoal Creek Blvd, Austin, TX 78705',
+    coords: { lat: 30.28784, lng: -97.75182 },
+    surface: 'acrylic hardcourt',
+    lights: true,
+    indoor: false,
+    accessibility: true,
+    amenities: ['8 lighted courts', 'pro shop', 'historic tennis club', 'clinics'],
+    courtCount: 8,
+    status: 'active',
+    description: 'One of the oldest continuously active municipal tennis facilities in Texas, preserving dedicated tennis play along the Shoal Creek greenbelt at 24th & Lamar.',
+    googleMapsUrl: 'https://maps.google.com/?q=Caswell+Tennis+Center+Austin',
+    bannerUrl: '/assets/raw_courts/caswell-tennis-center_raw.jpg',
   },
 
   // ── CHERRYWOOD ──
@@ -846,6 +882,7 @@ export const AUSTIN_COURTS_DATA = [
     description: 'Expansive Southwest Austin regional sports complex with lighted tennis courts, basketball, and championship soccer fields.',
     googleMapsUrl: 'https://maps.google.com/?q=Circle+C+Ranch+Metropolitan+Park+Austin',
   },
+  ...NEW_VENUES_DATA,
 ];
 
 
@@ -859,6 +896,16 @@ export const getCartoonImageUrl = (courtId) => {
     'alamo-pocket-park': '/assets/courts_v1/cherrywood-alamo-park.jpg',
   };
 
-  return COURT_IMAGE_MAP[courtId] || `/assets/courts_v1/${courtId}.jpg`;
+  if (COURT_IMAGE_MAP[courtId]) {
+    return COURT_IMAGE_MAP[courtId];
+  }
+
+  // Check if court has a new banner in raw_courts
+  const court = AUSTIN_COURTS_DATA.find((c) => c.id === courtId);
+  if (court?.bannerUrl) {
+    return court.bannerUrl;
+  }
+
+  return `/assets/courts_v1/${courtId}.jpg`;
 };
 

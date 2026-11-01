@@ -196,6 +196,7 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
         updateDistrictLabelPositions();
       });
       updateDistrictLabelPositions();
+      updateVisibleCourts(activeDistrictZone);
     }
 
     initLeafletMap();
@@ -230,6 +231,14 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
     updateVisibleCourts(activeDistrictZone);
   }, [activeDistrictZone, activeGames]);
 
+  const matchesDistrictZone = (court, zoneName) => {
+    if (!zoneName) return true;
+    if (court.id === 'caswell-tennis-center' && (zoneName === 'West Austin / Zilker' || zoneName === 'Downtown')) {
+      return true;
+    }
+    return getCartoonZone(court.district) === zoneName;
+  };
+
   const updateVisibleCourts = (zoneName) => {
     if (!mapInstanceRef.current || !window.L || !layerGroupRef.current) return;
     const L = window.L;
@@ -237,11 +246,10 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
     // Clear existing markers robustly
     layerGroupRef.current.clearLayers();
 
-    if (!zoneName) return;
-
     AUSTIN_COURTS_DATA.forEach((court) => {
-      if (getCartoonZone(court.district) === zoneName) {
+      if (matchesDistrictZone(court, zoneName)) {
         const sportColor = SPORT_META[court.sport[0]]?.color || '#3b82f6';
+        const sportEmoji = SPORT_META[court.sport[0]]?.emoji || '🏟️';
         const activeGame = activeGames?.find(g => g.courtId === court.id);
         
         let customHtml = '';
@@ -266,6 +274,10 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
         });
 
         const marker = L.marker([court.coords.lat, court.coords.lng], { icon: customIcon });
+        marker.bindTooltip(`${sportEmoji} ${court.name}`, {
+          direction: 'top',
+          offset: [0, -8],
+        });
 
         marker.on('click', () => {
           if (onPlaceSelect) onPlaceSelect({ id: court.id, category: 'court' });
@@ -281,7 +293,6 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
-    setAiAnswer('');
 
     const apiKey = getStoredOpenAIKey();
 
@@ -289,7 +300,7 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
       try {
         const result = await searchMapWithOpenAI({
           query: searchQuery,
-          locations: MAP_LOCATIONS,
+          locations: AUSTIN_COURTS_DATA,
           model: 'gpt-4o-mini',
         });
 
@@ -299,8 +310,10 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
           if (court) {
              const zone = getCartoonZone(court.district);
              setActiveDistrictZone(zone);
-             if (mapInstanceRef.current) mapInstanceRef.current.setView([court.coords.lat, court.coords.lng], 13, { animate: true });
+             if (mapInstanceRef.current) mapInstanceRef.current.setView([court.coords.lat, court.coords.lng], 14, { animate: true });
           }
+        } else {
+          fallbackLocalSearch();
         }
       } catch (err) {
         console.warn('OpenAI search fallback:', err);
@@ -314,15 +327,18 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
   };
 
   const fallbackLocalSearch = () => {
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
     const court = AUSTIN_COURTS_DATA.find((c) =>
       c.name.toLowerCase().includes(q) ||
-      c.district.toLowerCase().includes(q)
+      (c.shortName && c.shortName.toLowerCase().includes(q)) ||
+      (c.address && c.address.toLowerCase().includes(q)) ||
+      c.district.toLowerCase().includes(q) ||
+      (c.sport || []).some((s) => s.toLowerCase().includes(q))
     );
     if (court) {
       const zone = getCartoonZone(court.district);
       setActiveDistrictZone(zone);
-      if (mapInstanceRef.current) mapInstanceRef.current.setView([court.coords.lat, court.coords.lng], 13, { animate: true });
+      if (mapInstanceRef.current) mapInstanceRef.current.setView([court.coords.lat, court.coords.lng], 14, { animate: true });
     }
   };
 
@@ -450,7 +466,7 @@ export default function AustinStreetMap({ onPlaceSelect, activeGames = [] }) {
               </div>
             </div>
             <div className="asm-sidebar-list">
-              {AUSTIN_COURTS_DATA.filter(c => getCartoonZone(c.district) === activeDistrictZone).map(court => {
+              {AUSTIN_COURTS_DATA.filter(c => matchesDistrictZone(c, activeDistrictZone)).map(court => {
                 const isMuellerEastLawn = court.id === 'mueller-lake-park-east-lawn';
                 return (
                   <div
