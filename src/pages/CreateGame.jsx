@@ -8,6 +8,7 @@ import { SPORT_META } from '../data/courtsMeta';
 import Loading from '../components/Loading';
 import VerifyEmailBanner from '../components/VerifyEmailBanner';
 import { assertCanParticipate, assertReliable } from '../services/safety';
+import { resolveUsernamesToUids, sendDirectGameInvites } from '../services/invites';
 import './CreateGame.css';
 
 export default function CreateGame() {
@@ -27,6 +28,8 @@ export default function CreateGame() {
   const [skillLevel, setSkillLevel] = useState('casual');
   const [subCourt, setSubCourt] = useState('');
   const [notes, setNotes] = useState('');
+  const [privacyMode, setPrivacyMode] = useState('public'); // 'public' | 'request' | 'invite_only'
+  const [inviteHandles, setInviteHandles] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
@@ -53,6 +56,11 @@ export default function CreateGame() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!emailVerified) {
+      alert(user ? "Please verify your email in Profile Settings to post games." : "You must be signed in with a verified account to post games.");
+      return;
+    }
+    
     if (!sport || !scheduledTime || !maxPlayers) {
       setError('Please fill in all required fields.');
       return;
@@ -100,6 +108,16 @@ export default function CreateGame() {
         }
       }
 
+      const isPrivate = privacyMode === 'request' || privacyMode === 'invite_only';
+      const isInviteOnly = privacyMode === 'invite_only';
+      const rawHandles = inviteHandles
+        .split(/[\s,]+/)
+        .map((h) => h.trim())
+        .filter(Boolean);
+      const invitedUids = rawHandles.length > 0
+        ? await resolveUsernamesToUids(rawHandles, user.uid)
+        : [];
+
       const gameData = {
         courtId,
         courtName: court.name,
@@ -108,17 +126,36 @@ export default function CreateGame() {
         sport,
         createdBy: user.uid,
         creatorName: userProfile?.displayName || user?.displayName || 'Player',
+        hostAvatarUrl: userProfile?.avatarUrl || user?.photoURL || '',
         status: 'open',
         scheduledTime: Timestamp.fromDate(dateObj),
         duration: parseInt(duration, 10),
         maxPlayers: parsedMax,
         currentPlayers: [user.uid],
+        joinRequests: [],
+        invitedPlayers: invitedUids,
+        privacyMode,
+        isPrivate,
+        isInviteOnly,
         skillLevel,
         notes: notes.trim(),
         createdAt: serverTimestamp(),
       };
 
-      await addDoc(collection(db, 'games'), gameData);
+      const createdRef = await addDoc(collection(db, 'games'), gameData);
+
+      if (invitedUids.length > 0) {
+        await sendDirectGameInvites(
+          invitedUids,
+          {
+            uid: user.uid,
+            displayName: userProfile?.displayName || user?.displayName || 'Player',
+            username: userProfile?.username || '',
+            avatarUrl: userProfile?.avatarUrl || user?.photoURL || '',
+          },
+          { id: createdRef.id, ...gameData }
+        );
+      }
       
       await updateDoc(userRef, {
         gamesCreatedToday: newCount,
@@ -170,12 +207,13 @@ export default function CreateGame() {
 
         <div className="cg-permit-warning" style={{ background: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.4)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
           <button type="button" onClick={() => setShowPermitInfo(!showPermitInfo)} style={{ background: 'none', border: 'none', color: 'inherit', display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer', padding: 0, fontWeight: 'bold' }}>
-            <span>⚠️ City Parks Permit Notice</span>
+            <span>⚠️ General Notice</span>
             <span style={{ marginLeft: 'auto' }}>{showPermitInfo ? '▲' : '▼'}</span>
           </button>
           {showPermitInfo && (
             <div style={{ marginTop: '0.5rem', lineHeight: '1.4' }}>
-              If this is an official City of Austin park, you may need a permit for exclusive use. <br/>
+              Some courts have entities associated with them that require membership and a fee. We are a service to locate and schedule matches with Austinites, we are not affiliated with these entities (for instance, YMCA or Austin High tennis courts) and cannot guarantee court access.<br/><br/>
+              Additionally, if this is an official City of Austin park, you may need a permit for exclusive use. <br/>
               Contact Austin Parks & Rec Athletics: <a href="mailto:reservations@austintexas.gov" style={{color: 'var(--accent-primary)'}}>reservations@austintexas.gov</a> or call <strong>3-1-1</strong>.
             </div>
           )}
@@ -294,16 +332,54 @@ export default function CreateGame() {
             />
           </div>
 
+          {/* Privacy & Access Mode Selector */}
+          <div className="form-group" style={{ paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
+            <label htmlFor="cg-privacy-mode">Match Access & Privacy</label>
+            <select
+              id="cg-privacy-mode"
+              value={privacyMode}
+              onChange={(e) => setPrivacyMode(e.target.value)}
+            >
+              <option value="public">🌐 Public Pickup (Anyone can join immediately)</option>
+              <option value="request">🛡️ Gatekept (Visible on feed · Players request to join)</option>
+              <option value="invite_only">🔒 Invite-Only (Hidden from public feeds · Invited players only)</option>
+            </select>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+              {privacyMode === 'public' && 'Anyone in Austin can see and join your match with 1 tap.'}
+              {privacyMode === 'request' && 'Listed on feeds with a 🔒 REQUEST TO JOIN button. You approve or deny players.'}
+              {privacyMode === 'invite_only' && 'Hidden from uninvited users on all feeds. Only players you invite can see and join.'}
+            </p>
+          </div>
+
+          {/* Optional Direct Invites by @username */}
+          <div className="form-group">
+            <label htmlFor="cg-invites">
+              Invite Players by @username {privacyMode === 'invite_only' ? '(Recommended for Invite-Only)' : '(Optional)'}
+            </label>
+            <input
+              id="cg-invites"
+              type="text"
+              placeholder="e.g. @austinballer, @picklequeen"
+              value={inviteHandles}
+              onChange={(e) => setInviteHandles(e.target.value)}
+            />
+          </div>
+
           {/* Copyright LLC */}
           <div className="cg-llc-footer">
             © 2026 Swami Software, LLC. All rights reserved.
           </div>
 
           {/* Submit */}
+          {!emailVerified && (
+             <div style={{color: '#f87171', textAlign: 'center', marginBottom: '1rem', fontSize: '0.9rem', fontWeight: 'bold'}}>
+               {user ? "Please verify your email in Profile Settings to post games." : "You must be signed in with a verified account to post games."}
+             </div>
+          )}
           <button
             type="submit"
-            className="cg-submit-btn"
-            disabled={submitting || !emailVerified}
+            className={`cg-submit-btn ${!emailVerified ? 'cg-submit-btn-disabled' : ''}`}
+            disabled={submitting}
             id="cg-submit-button"
           >
             {submitting ? 'Creating...' : 'POST pickup game'}

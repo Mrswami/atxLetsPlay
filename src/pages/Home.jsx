@@ -3,8 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SearchBar from '../components/SearchBar';
 import Avatar from '../components/Avatar';
+import NotificationsBell from '../components/NotificationsBell';
 import AustinStreetMap from '../components/AustinStreetMap';
-import { useAllActiveGames, joinGame, leaveGame } from '../hooks/useCourts';
+import GameSlotsRow from '../components/GameSlotsRow';
+import { useAllActiveGames, joinGame, leaveGame, requestJoinGame } from '../hooks/useCourts';
 import { SPORT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -17,8 +19,17 @@ export default function Home() {
   const containerRef = useRef(null);
   // Default to real street/terrain map view matching user's reference map
   const [viewMode, setViewMode] = useState(location.state?.viewMode || 'street'); // 'street' | 'dashboard'
+
+  useEffect(() => {
+    if (location.state?.viewMode) {
+      setViewMode(location.state.viewMode);
+    }
+  }, [location.state?.viewMode]);
+
   const [courts, setCourts] = useState(AUSTIN_COURTS_DATA || []);
   const [showCourtSelect, setShowCourtSelect] = useState(false);
+  const [drawerDistrictTab, setDrawerDistrictTab] = useState('all');
+  const [drawerSearch, setDrawerSearch] = useState('');
   const [toast, setToast] = useState(null);
 
   const handleCallNext = () => {
@@ -41,10 +52,21 @@ export default function Home() {
       return;
     }
     const isJoined = game.currentPlayers?.includes(user.uid);
+    const hasRequested = game.joinRequests?.includes(user.uid);
+    const isHost = game.createdBy === user.uid || game.hostId === user.uid;
+    const isInvited = (game.invitedPlayers || []).includes(user.uid);
+    const isInviteOnly = Boolean(game.isInviteOnly || game.privacyMode === 'invite_only');
+    const requiresRequest = Boolean(game.isPrivate && !isInviteOnly && !isHost && !isInvited);
+
     try {
       if (isJoined) {
         await leaveGame(game.id, user.uid);
         setToast({ type: 'success', message: 'You left the game.' });
+      } else if (hasRequested) {
+        return;
+      } else if (requiresRequest) {
+        await requestJoinGame(game.id, user.uid);
+        setToast({ type: 'success', message: '🔒 Request to join sent to host!' });
       } else {
         await joinGame(game.id, user.uid);
         setToast({ type: 'success', message: 'You got next! See you on the court.' });
@@ -127,7 +149,10 @@ export default function Home() {
     getDocs(collection(db, 'courts'))
       .then((snap) => {
         if (!snap.empty) {
-          setCourts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+          const remoteCourts = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          const remoteIds = new Set(remoteCourts.map((c) => c.id));
+          const localOnly = AUSTIN_COURTS_DATA.filter((c) => !remoteIds.has(c.id));
+          setCourts([...remoteCourts, ...localOnly]);
         }
       })
       .catch((err) => {
@@ -178,13 +203,16 @@ export default function Home() {
 
       {viewMode === 'street' && (
         user ? (
-          <button 
-            className="overworld-avatar-btn" 
-            onClick={() => navigate(`/profile/${user.uid}`)}
-            aria-label="View Profile"
-          >
-            <Avatar url={avatarUrl} name={displayName} size="medium" xp={0} />
-          </button>
+          <div className="overworld-top-right-actions">
+            <NotificationsBell hideWhenEmpty />
+            <button 
+              className="overworld-avatar-btn" 
+              onClick={() => isGuest ? navigate('/login') : navigate(`/profile/${user.uid}`)}
+              aria-label="View Profile"
+            >
+              <Avatar url={avatarUrl} name={displayName} size="small" xp={0} />
+            </button>
+          </div>
         ) : (
           <button 
             className="overworld-login-btn" 
@@ -199,6 +227,7 @@ export default function Home() {
       {viewMode === 'street' && (
         <div className="street-map-fullscreen">
           <AustinStreetMap
+            activeGames={gamesList}
             onPlaceSelect={(place) => {
               if (place.category === 'court') {
                 navigate(`/court/${place.id}`);
@@ -232,15 +261,16 @@ export default function Home() {
             <span className="hb-atx">ATX</span>
             <span className="hb-lp">LET'S PLAY</span>
           </span>
-          <div className="header-actions">
-            <button className="friends-header-btn" onClick={() => navigate('/friends')} aria-label="Friends">
-              👥
-            </button>
-            <div className="header-xp">
-              <span className="xp-bolt">⚡</span>
-              <span className="xp-num">{xp.toLocaleString()} XP</span>
+            <div className="header-actions">
+              <NotificationsBell />
+              <button className="friends-header-btn" onClick={() => navigate('/friends')} aria-label="Friends">
+                👥
+              </button>
+              <div className="header-xp">
+                <span className="xp-bolt">⚡</span>
+                <span className="xp-num">{xp.toLocaleString()} XP</span>
+              </div>
             </div>
-          </div>
         </header>
 
         {/* Search */}
@@ -303,7 +333,7 @@ export default function Home() {
         <div className="home-avatar-section">
           <button
             className="home-avatar-btn"
-            onClick={() => user ? navigate(`/profile/${user.uid}`) : navigate('/login')}
+            onClick={() => (user && !isGuest) ? navigate(`/profile/${user.uid}`) : navigate('/login')}
             aria-label="View profile"
           >
             <Avatar url={avatarUrl} name={displayName} size="large" xp={0} />
@@ -426,6 +456,12 @@ export default function Home() {
                 const sm = SPORT_META[game.sport] || SPORT_META['basketball'];
                 const scheduledDate = game.scheduledTime?.toDate ? game.scheduledTime.toDate() : (game.scheduledTime ? new Date(game.scheduledTime) : new Date());
                 const isJoined = user && game.currentPlayers?.includes(user.uid);
+                const hasRequested = user && game.joinRequests?.includes(user.uid);
+                const isHost = user && (game.createdBy === user.uid || game.hostId === user.uid);
+                const isInvited = user && (game.invitedPlayers || []).includes(user.uid);
+                const isInviteOnly = Boolean(game.isInviteOnly || game.privacyMode === 'invite_only');
+                const requiresRequest = Boolean(game.isPrivate && !isInviteOnly && !isHost && !isInvited);
+                const spotsLeft = (game.maxPlayers || 10) - (game.currentPlayers?.length || 1);
                 
                 const isLive = scheduledDate.getTime() <= Date.now() && scheduledDate.getTime() > Date.now() - (2 * 60 * 60 * 1000);
                 const isOver = scheduledDate.getTime() <= Date.now() - (2 * 60 * 60 * 1000);
@@ -439,23 +475,39 @@ export default function Home() {
                     }
                   }}>
                     <Avatar url={game.hostAvatarUrl} name={game.creatorName || game.hostName} size="small" />
-                    <div className="haf-content">
+                    <div className="haf-content" style={{ flex: 1, minWidth: 0 }}>
                       <p>
-                        <strong>{game.creatorName || game.hostName || (game.createdBy?.startsWith('guest-') ? 'A Guest Player' : 'A Player')}</strong> is hosting a {sm.emoji} <strong>{sm.label}</strong> pickup game at <strong>{court?.name || 'a court'}</strong>.
+                        <strong>{game.creatorName || game.hostName || (game.createdBy?.startsWith('guest-') ? 'A Guest Player' : 'A Player')}</strong> is hosting a {sm.emoji} <strong>{sm.label}</strong> pickup game at <strong>{court?.name || game.courtName || 'a court'}</strong>.
+                        {isInviteOnly ? (
+                          <span className="game-privacy-badge game-privacy-badge--invite" style={{ marginLeft: '6px' }}>🔒 Invite-Only</span>
+                        ) : game.isPrivate ? (
+                          <span className="game-privacy-badge" style={{ marginLeft: '6px' }}>🔒 Gatekept</span>
+                        ) : null}
                       </p>
                       <span className="haf-time">
                         {isOver ? 'Ended ' : (isLive ? 'LIVE ' : '')}
                         {scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {game.currentPlayers && game.currentPlayers.length > 1 && ` · ${game.currentPlayers.length} players joined`}
                       </span>
+                      <GameSlotsRow game={game} compact />
                     </div>
                     <button 
-                      className={`haf-rsvp-btn ${isJoined ? 'leave' : ''}`}
+                      className={`haf-rsvp-btn ${isJoined ? 'leave' : ''} ${hasRequested ? 'requested' : ''}`}
                       onClick={(e) => handleFeedRSVP(e, game)}
-                      disabled={isOver}
-                      style={{ display: isOver ? 'none' : 'block' }}
+                      disabled={isOver || hasRequested || (!isJoined && !requiresRequest && spotsLeft <= 0)}
+                      style={{
+                        display: isOver ? 'none' : 'block',
+                        ...(hasRequested ? { background: 'transparent', border: '1px solid var(--text-secondary)', color: 'var(--text-secondary)' } : {})
+                      }}
                     >
-                      {isJoined ? 'LEAVE' : 'I GOT NEXT'}
+                      {isJoined
+                        ? 'LEAVE'
+                        : hasRequested
+                        ? '⏳ REQUEST SENT'
+                        : requiresRequest
+                        ? '🔒 REQUEST TO JOIN'
+                        : spotsLeft <= 0
+                        ? 'FULL'
+                        : 'I GOT NEXT'}
                     </button>
                   </div>
                 );
@@ -471,36 +523,137 @@ export default function Home() {
         <div className="court-select-overlay" onClick={() => setShowCourtSelect(false)}>
           <div className="court-select-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="cs-header">
-              <h2>Select a Court</h2>
+              <div>
+                <h2>Select a Court</h2>
+                <span className="cs-subtitle">Choose where you want to call next</span>
+              </div>
               <button className="cs-close" onClick={() => setShowCourtSelect(false)}>×</button>
             </div>
+
+            {/* Quick Court Search */}
+            <div className="cs-search-box">
+              <span className="cs-search-icon">🔍</span>
+              <input
+                type="text"
+                className="cs-search-input"
+                placeholder="Search courts (e.g. Mueller, volleyball, tennis)..."
+                value={drawerSearch}
+                onChange={(e) => setDrawerSearch(e.target.value)}
+              />
+              {drawerSearch && (
+                <button className="cs-search-clear" onClick={() => setDrawerSearch('')}>×</button>
+              )}
+            </div>
+
+            {/* District Drawer Tabs */}
+            <div className="cs-district-tabs">
+              {[
+                { id: 'all', label: 'All', emoji: '🗺️' },
+                { id: 'mueller', label: 'Mueller', emoji: '🌳' },
+                { id: 'downtown', label: 'Downtown', emoji: '🏙️' },
+                { id: 'zilker', label: 'Zilker', emoji: '🏊' },
+                { id: 'east', label: 'East Austin', emoji: '🎨' },
+                { id: 'north', label: 'North Austin', emoji: '🧭' },
+                { id: 'south', label: 'South Austin', emoji: '🌲' },
+                { id: 'wampus', label: 'Campus', emoji: '🎓' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  className={`cs-tab-btn ${drawerDistrictTab === tab.id ? 'active' : ''}`}
+                  onClick={() => setDrawerDistrictTab(tab.id)}
+                  id={`cs-tab-${tab.id}`}
+                >
+                  <span className="cs-tab-emoji">{tab.emoji}</span>
+                  <span className="cs-tab-label">{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
             <div className="cs-body">
               {courts.length === 0 ? (
                 <p className="cs-loading">Loading courts...</p>
-              ) : (
-                <div className="cs-list">
-                  {courts.map((court) => (
-                    <button
-                      key={court.id}
-                      className="cs-item"
-                      onClick={() => {
-                        setShowCourtSelect(false);
-                        navigate(`/create-game/${court.id}`);
-                      }}
-                      id={`select-court-${court.id}`}
-                    >
-                      <span className="cs-item-emoji">🏟️</span>
-                      <div className="cs-item-info">
-                        <span className="cs-item-name">{court.name}</span>
-                        <span className="cs-item-district">
-                          {court.district?.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                        </span>
-                      </div>
-                      <span className="cs-item-arrow">→</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+              ) : (() => {
+                const filtered = courts.filter((court) => {
+                  let matchesDistrict = true;
+                  if (drawerDistrictTab === 'all') {
+                    matchesDistrict = true;
+                  } else if (drawerDistrictTab === 'mueller') {
+                    matchesDistrict = court.district === 'mueller';
+                  } else if (drawerDistrictTab === 'east') {
+                    matchesDistrict = ['east', 'cherrywood', 'cesar-chavez'].includes(court.district);
+                  } else if (drawerDistrictTab === 'north') {
+                    matchesDistrict = ['north', 'windsor', 'hyde-park'].includes(court.district);
+                  } else if (drawerDistrictTab === 'south') {
+                    matchesDistrict = ['south', 'south-congress'].includes(court.district);
+                  } else if (drawerDistrictTab === 'zilker') {
+                    matchesDistrict = ['zilker', 'norwood', 'river', 'tarry'].includes(court.district);
+                  } else {
+                    matchesDistrict = court.district === drawerDistrictTab;
+                  }
+
+                  const q = drawerSearch.trim().toLowerCase();
+                  const matchesSearch = !q ||
+                    court.name.toLowerCase().includes(q) ||
+                    (court.district && court.district.toLowerCase().includes(q)) ||
+                    (court.address && court.address.toLowerCase().includes(q)) ||
+                    (court.sport || []).some((s) => s.toLowerCase().includes(q));
+
+                  return matchesDistrict && matchesSearch;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="cs-empty-state">
+                      <span>🏟️</span>
+                      <p>No courts found matching this filter.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="cs-list">
+                    {filtered.map((court) => {
+                      const primarySport = court.sport?.[0];
+                      const sm = SPORT_META[primarySport];
+                      const isMuellerEastLawn = court.id === 'mueller-lake-park-east-lawn';
+                      const isNew = isMuellerEastLawn || court.bannerUrl?.includes('raw_courts');
+
+                      return (
+                        <button
+                          key={court.id}
+                          className={`cs-item ${isMuellerEastLawn ? 'cs-item-highlight' : ''}`}
+                          onClick={() => {
+                            setShowCourtSelect(false);
+                            navigate(`/create-game/${court.id}`);
+                          }}
+                          id={`select-court-${court.id}`}
+                        >
+                          <span className="cs-item-emoji">{sm?.emoji || '🏟️'}</span>
+                          <div className="cs-item-info">
+                            <div className="cs-item-title-row">
+                              <span className="cs-item-name">{court.name}</span>
+                              {isMuellerEastLawn && (
+                                <span className="cs-badge-highlight">✨ NEW VENUE</span>
+                              )}
+                              {!isMuellerEastLawn && isNew && (
+                                <span className="cs-badge-new">NEW</span>
+                              )}
+                            </div>
+                            <span className="cs-item-district">
+                              {court.district?.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                              {court.sport && ` · ${court.sport.map((s) => SPORT_META[s]?.label || s).join(', ')}`}
+                            </span>
+                            {court.address && (
+                              <span className="cs-item-address">{court.address}</span>
+                            )}
+                          </div>
+                          <span className="cs-item-arrow">→</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -540,12 +693,11 @@ export default function Home() {
                     value={suggestForm.sport} 
                     onChange={e => setSuggestForm({...suggestForm, sport: e.target.value})}
                   >
-                    <option value="Basketball">Basketball 🏀</option>
-                    <option value="Tennis">Tennis 🎾</option>
-                    <option value="Pickleball">Pickleball 🏓</option>
-                    <option value="Volleyball">Volleyball 🏐</option>
-                    <option value="Soccer">Soccer ⚽</option>
-                    <option value="Disc Golf">Disc Golf 🥏</option>
+                    {Object.keys(SPORT_META).map((key) => (
+                      <option key={key} value={SPORT_META[key].label}>
+                        {SPORT_META[key].label} {SPORT_META[key].emoji}
+                      </option>
+                    ))}
                     <option value="Other">Other / Not Listed</option>
                   </select>
                 </div>

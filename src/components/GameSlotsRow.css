@@ -1,0 +1,151 @@
+.game-slots-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.game-slots-row--compact {
+  margin-top: 0.35rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 10px;
+}
+
+.gsr-avatars {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  flex-wrap: wrap;
+}
+
+.gsr-slot {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.game-slots-row--compact .gsr-slot {
+  width: 22px;
+  height: 22px;
+}
+
+.gsr-slot--filled {
+  background: linear-gradient(135deg, #059669, #10b981);
+  border: 2px solid #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.35);
+  color: #ffffff;
+}
+
+.gsr-slot--open {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px dashed rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.gsr-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.gsr-avatar-initials {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.game-slots-row--compact .gsr-avatar-initials {
+  font-size: 0.55rem;
+}
+
+.gsr-dot-indicator--filled {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 1.5px solid #0f172a;
+}
+
+.gsr-open-plus {
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.gsr-extra-slots {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94a3b8;
+  padding-left: 0.15rem;
+}
+
+.gsr-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-display, 'Outfit', sans-serif);
+}
+
+.gsr-dots-text {
+  font-size: 0.68rem;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.game-slots-row--compact .gsr-dots-text {
+  font-size: 0.62rem;
+}
+
+.gsr-fraction {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.12rem 0.42rem;
+  border-radius: 6px;
+}
+
+.game-slots-row--compact .gsr-fraction {
+  font-size: 0.72rem;
+  padding: 0.08rem 0.35rem;
+}
+
+/* Privacy Badges on Feed Cards */
+.game-privacy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.18rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+  vertical-align: middle;
+}
+
+.game-privacy-badge--invite {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.5);
+  color: #c4b5fd;
+}

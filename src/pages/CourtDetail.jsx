@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useCourt, useCourtGames, joinGame, leaveGame } from '../hooks/useCourts';
+import { useCourt, useCourtGames, joinGame, leaveGame, requestJoinGame } from '../hooks/useCourts';
 import NoShowPanel from '../components/NoShowPanel';
 import { useAuth } from '../contexts/AuthContext';
 import { SPORT_META, getCartoonImageUrl } from '../data/courtsMeta';
 import Loading from '../components/Loading';
 import CourtComments from '../components/CourtComments';
+import PartnerEventModal from '../components/PartnerEventModal';
+import GameSlotsRow from '../components/GameSlotsRow';
 import './CourtDetail.css';
 
 export default function CourtDetail() {
@@ -19,6 +21,7 @@ export default function CourtDetail() {
   const [actionError, setActionError] = useState('');
   const [showSubCourts, setShowSubCourts] = useState(false);
   const [showPermitInfo, setShowPermitInfo] = useState(false);
+  const [selectedPartnerEvent, setSelectedPartnerEvent] = useState(null);
 
   function handleBack() {
     if (location.state?.fromCreate || window.history.length <= 1) {
@@ -29,15 +32,28 @@ export default function CourtDetail() {
   }
 
   async function handleGameAction(game) {
+    if (game.isPartnerEvent) {
+      setSelectedPartnerEvent(game);
+      return;
+    }
+
     if (!user) {
       navigate('/login');
       return;
     }
     const isJoined = game.currentPlayers?.includes(user.uid);
+    const hasRequested = game.joinRequests?.includes(user.uid);
+    
     try {
       setActionError('');
       if (isJoined) {
         await leaveGame(game.id, user.uid);
+      } else if (hasRequested) {
+        // Option to cancel request could be added here, but for now we do nothing
+        return;
+      } else if (game.isPrivate && !Boolean(game.isInviteOnly || game.privacyMode === 'invite_only') && game.createdBy !== user.uid && game.hostId !== user.uid && !(game.invitedPlayers || []).includes(user.uid)) {
+        await requestJoinGame(game.id, user.uid);
+        setActionError('Request to join sent!');
       } else {
         await joinGame(game.id, user.uid);
       }
@@ -103,12 +119,13 @@ export default function CourtDetail() {
         {/* Permit Warning */}
         <div className="cd-permit-warning" style={{ background: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.4)', padding: '0.75rem', borderRadius: '8px', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
           <button onClick={() => setShowPermitInfo(!showPermitInfo)} style={{ background: 'none', border: 'none', color: 'inherit', display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer', padding: 0, fontWeight: 'bold' }}>
-            <span>⚠️ City Parks Permit Notice</span>
+            <span>⚠️ General Notice</span>
             <span style={{ marginLeft: 'auto' }}>{showPermitInfo ? '▲' : '▼'}</span>
           </button>
           {showPermitInfo && (
             <div style={{ marginTop: '0.5rem', lineHeight: '1.4' }}>
-              Official reservations may be required for exclusive use, leagues, or large groups at PARD courts. <br/>
+              Some courts have entities associated with them that require membership and a fee. We are a service to locate and schedule matches with Austinites, we are not affiliated with these entities (for instance, YMCA or Austin High tennis courts) and cannot guarantee court access.<br/><br/>
+              Additionally, official reservations may be required for exclusive use, leagues, or large groups at PARD courts. <br/>
               Contact Austin Parks & Rec Athletics: <br/>
               Email: <a href="mailto:reservations@austintexas.gov" style={{color: 'var(--accent-primary)'}}>reservations@austintexas.gov</a> | Phone: <strong>3-1-1</strong>
             </div>
@@ -286,6 +303,14 @@ export default function CourtDetail() {
           </div>
         )}
       </div>
+
+      {/* Partner Event Modal */}
+      {selectedPartnerEvent && (
+        <PartnerEventModal
+          event={selectedPartnerEvent}
+          onClose={() => setSelectedPartnerEvent(null)}
+        />
+      )}
     </div>
   );
 }
@@ -298,8 +323,12 @@ function GameCard({ game, userId, onAction }) {
     ? scheduledDate.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
     : 'Time TBD';
 
+  const isPartner = !!game.isPartnerEvent;
   const spotsLeft = (game.maxPlayers || 10) - (game.currentPlayers?.length || 0);
   const isJoined = game.currentPlayers?.includes(userId);
+  const hasRequested = game.joinRequests?.includes(userId);
+  const isInviteOnly = Boolean(game.isInviteOnly || game.privacyMode === 'invite_only');
+  const isHostOrInvited = Boolean(userId && (game.createdBy === userId || game.hostId === userId || (game.invitedPlayers || []).includes(userId)));
 
   const durationMs = (game.duration || 2) * 60 * 60 * 1000;
   const isLive = scheduledDate && 
@@ -307,9 +336,26 @@ function GameCard({ game, userId, onAction }) {
                  Date.now() < scheduledDate.getTime() + durationMs;
 
   return (
-    <div className={`game-card ${isJoined ? 'joined' : ''}`}>
+    <div className={`game-card ${isJoined ? 'joined' : ''} ${isPartner ? 'game-card--partner' : ''}`}>
       <div className="game-card-header">
-        <span className="game-sport-emoji">{meta?.emoji}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span className="game-sport-emoji">{meta?.emoji}</span>
+          {(game.isPrivate || isInviteOnly) && (
+            <span className={`game-privacy-badge ${isInviteOnly ? 'game-privacy-badge--invite' : ''}`}>
+              🔒 {isInviteOnly ? 'Invite-Only' : 'Gatekept'}
+            </span>
+          )}
+          {isPartner && (
+            <span className="ag-partner-badge" style={{ fontSize: '0.62rem', padding: '0.2rem 0.45rem' }}>
+              ★ Partner
+            </span>
+          )}
+          {game.isTicketed && (
+            <span className="ag-ticket-badge" style={{ fontSize: '0.62rem', padding: '0.2rem 0.45rem' }}>
+              🎟️ {game.ticketPrice || 'Ticketed'}
+            </span>
+          )}
+        </div>
         <div className="game-card-info">
           <span className="game-time">{timeStr}</span>
           <span className="game-skill">{game.skillLevel || 'All levels'}</span>
@@ -318,7 +364,19 @@ function GameCard({ game, userId, onAction }) {
           {spotsLeft === 0 ? 'FULL' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
         </span>
       </div>
+
+      {isPartner && game.organizer && (
+        <div className="ag-organizer-row" style={{ padding: '0 0.25rem', marginBottom: '0.25rem' }}>
+          <span className="ag-organizer-avatar">🏐</span>
+          <span className="ag-organizer-name">
+            Hosted by <strong>{game.organizer.displayName}</strong>
+            <span className="ag-check-circle">✓</span>
+          </span>
+        </div>
+      )}
+
       {game.notes && <p className="game-notes">{game.notes}</p>}
+      <GameSlotsRow game={game} />
       
       {isJoined && isLive && (
         <button
@@ -331,12 +389,23 @@ function GameCard({ game, userId, onAction }) {
       )}
       
       <button
-        className={`game-join-btn ${isJoined ? 'leave' : ''}`}
-        disabled={spotsLeft === 0 && !isJoined}
+        className={`game-join-btn ${isJoined ? 'leave' : ''} ${hasRequested ? 'requested' : ''} ${isPartner ? 'partner-btn' : ''}`}
+        disabled={(spotsLeft === 0 && !isJoined && !isPartner) || hasRequested}
         onClick={onAction}
         id={`join-game-${game.id}`}
+        style={hasRequested ? { background: 'transparent', border: '1px solid var(--text-secondary)', color: 'var(--text-secondary)' } : {}}
       >
-        {isJoined ? 'LEAVE GAME' : spotsLeft === 0 ? 'FULL' : 'I GOT NEXT'}
+        {isPartner
+          ? '🎟️ RSVP & GET TICKETS'
+          : isJoined
+          ? 'LEAVE GAME'
+          : hasRequested
+          ? '⏳ REQUEST SENT'
+          : game.isPrivate && !isInviteOnly && !isHostOrInvited
+          ? '🔒 REQUEST TO JOIN'
+          : spotsLeft === 0
+          ? 'FULL'
+          : 'I GOT NEXT'}
       </button>
       {game.createdBy === userId && scheduledDate && scheduledDate.getTime() <= Date.now() && (
         <NoShowPanel game={game} hostId={userId} />

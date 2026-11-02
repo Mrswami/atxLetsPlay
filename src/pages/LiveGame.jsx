@@ -18,6 +18,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { getCartoonImageUrl } from '../data/courtsMeta';
 import { generateDefaultUsername } from '../utils/usernameGenerator';
 import { processChatMentions } from '../services/invites';
+import { filterProfanity } from '../utils/profanityFilter';
+import { approveJoinRequest, denyJoinRequest, kickPlayer, joinGame, requestJoinGame } from '../hooks/useCourts';
 import Avatar from '../components/Avatar';
 import './LiveGame.css';
 
@@ -31,7 +33,7 @@ function getUserColor(handle = '') {
 export default function LiveGame() {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, isGuest: contextIsGuest } = useAuth();
   
   const [game, setGame] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
@@ -44,7 +46,9 @@ export default function LiveGame() {
   const [suggestionFilter, setSuggestionFilter] = useState('');
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [participantsList, setParticipantsList] = useState([]);
+  const [requestsList, setRequestsList] = useState([]);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const [shareToast, setShareToast] = useState('');
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -87,35 +91,53 @@ export default function LiveGame() {
     if (playerUids.length === 0) return;
 
     setLoadingParticipants(true);
-    Promise.all(playerUids.map(async (uid) => {
-      if (uid.startsWith('guest-')) {
+    async function fetchProfiles() {
+      const results = await Promise.all(playerUids.map(async (uid) => {
+        if (uid.startsWith('guest-')) {
+          return {
+            uid,
+            displayName: game.creatorName || 'Guest Player',
+            username: 'guest',
+            avatarUrl: '',
+            isHost: uid === game.createdBy,
+          };
+        }
+        try {
+          const snap = await getDoc(doc(db, 'users', uid));
+          if (snap.exists()) {
+            return { uid, ...snap.data(), isHost: uid === game.createdBy };
+          }
+        } catch (err) {
+          console.warn('Error fetching participant:', err);
+        }
         return {
           uid,
-          displayName: game.creatorName || 'Guest Player',
-          username: 'guest',
+          displayName: 'Player',
+          username: generateDefaultUsername('Player', uid),
           avatarUrl: '',
           isHost: uid === game.createdBy,
         };
-      }
-      try {
-        const snap = await getDoc(doc(db, 'users', uid));
-        if (snap.exists()) {
-          return { uid, ...snap.data(), isHost: uid === game.createdBy };
+      }));
+
+      const requestUids = Array.from(new Set(game.joinRequests || []));
+      const reqResults = await Promise.all(requestUids.map(async (uid) => {
+        try {
+          const snap = await getDoc(doc(db, 'users', uid));
+          if (snap.exists()) {
+            return { uid, ...snap.data() };
+          }
+        } catch (err) {
+          console.warn('Error fetching request:', err);
         }
-      } catch (err) {
-        console.warn('Error fetching participant:', err);
-      }
-      return {
-        uid,
-        displayName: 'Player',
-        username: generateDefaultUsername('Player', uid),
-        avatarUrl: '',
-        isHost: uid === game.createdBy,
-      };
-    })).then((results) => {
+        return { uid, displayName: 'Player', username: generateDefaultUsername('Player', uid), avatarUrl: '' };
+      }));
+
       setParticipantsList(results);
+      setRequestsList(reqResults);
       setLoadingParticipants(false);
-    });
+    }
+    
+    fetchProfiles();
   }, [game]);
 
   useEffect(() => {
@@ -177,7 +199,7 @@ export default function LiveGame() {
                 if (found?.uid) {
                   navigate(`/profile/${found.uid}`);
                 } else {
-                  navigate(`/profile/${lowerHandle}`);
+                  navigate(`/profile/${rawHandle}`);
                 }
               }
             }}
@@ -224,7 +246,7 @@ export default function LiveGame() {
     }
     
     const activeUsername = userProfile?.username || generateDefaultUsername(userProfile?.displayName || user.displayName, user.uid);
-    const textToSend = newMessage.trim();
+    const textToSend = filterProfanity(newMessage.trim());
     setNewMessage('');
     setShowSuggestions(false);
 
@@ -277,6 +299,136 @@ export default function LiveGame() {
     }
   };
 
+  const handleKick = async (targetUid) => {
+    if (window.confirm("Are you sure you want to kick this player from the game?")) {
+      try {
+        await kickPlayer(game.id, targetUid, user.uid);
+      } catch (e) {
+        console.error("Failed to kick player", e);
+      }
+    }
+  };
+
+  const handleApprove = async (targetUid) => {
+    try {
+      await approveJoinRequest(game.id, targetUid, user.uid);
+    } catch (e) {
+      console.error("Failed to approve", e);
+    }
+  };
+
+  const handleDeny = async (targetUid) => {
+    try {
+      await denyJoinRequest(game.id, targetUid, user.uid);
+    } catch (e) {
+      console.error("Failed to deny", e);
+    }
+  };
+
+  const handleTogglePrivate = async () => {
+    try {
+      const currentMode = game?.isInviteOnly || game?.privacyMode === 'invite_only'
+        ? 'invite_only'
+        : game?.isPrivate
+        ? 'request'
+        : 'public';
+      const nextMode = currentMode === 'public' ? 'request' : currentMode === 'request' ? 'invite_only' : 'public';
+      await updateDoc(doc(db, 'games', gameId), {
+        privacyMode: nextMode,
+        isPrivate: nextMode !== 'public',
+        isInviteOnly: nextMode === 'invite_only',
+      });
+      setShareToast(
+        nextMode === 'invite_only'
+          ? '🔒 Match is now Invite-Only (Hidden from public feeds)'
+          : nextMode === 'request'
+          ? '🛡️ Match is now Gatekept (Request to Join)'
+          : '🔓 Match is now Public (Anyone can join)'
+      );
+      setTimeout(() => setShareToast(''), 3500);
+    } catch (e) {
+      console.error("Failed to toggle privacy", e);
+      alert("Failed to update privacy settings: " + e.message);
+    }
+  };
+
+  const handleShareGame = async () => {
+    const origin = window.location.origin.includes('localhost')
+      ? 'https://atxletsplay.web.app'
+      : window.location.origin;
+    const shareUrl = `${origin}/live-game/${gameId}`;
+    const sportName = (game?.sport || 'Pickup').toUpperCase();
+    const courtName = game?.courtName || 'Austin Court';
+
+    let timeStr = '';
+    if (game?.scheduledTime?.toMillis) {
+      timeStr = new Date(game.scheduledTime.toMillis()).toLocaleString([], {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+    }
+
+    const shareTitle = `ATX Let's Play: ${sportName} @ ${courtName}`;
+    const shareText = `🏀 Join my ${sportName} game at ${courtName}${timeStr ? ` on ${timeStr}` : ''} on ATX Let's Play!\n\nTap here to jump in: ${shareUrl}\n(Sign in super fast with Google or Email - Google is fastest! ⚡)`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        setShareToast('🎉 Match invite shared successfully!');
+        setTimeout(() => setShareToast(''), 3500);
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+        console.warn('Native share dialog closed or unsupported, falling back to clipboard', err);
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setShareToast('📋 Invite copied to clipboard! Paste it into a text message or group chat.');
+      setTimeout(() => setShareToast(''), 4500);
+    } catch (err) {
+      window.prompt('Copy match invite link & text:', shareText);
+    }
+  };
+
+  const handleJoinGame = async () => {
+    if (!user || user.isAnonymous) {
+      navigate('/login');
+      return;
+    }
+    try {
+      await joinGame(game.id, user.uid);
+      setShareToast('🎉 You joined the match!');
+      setTimeout(() => setShareToast(''), 3500);
+    } catch (e) {
+      console.error('Failed to join game', e);
+      alert(e.message || 'Failed to join game');
+    }
+  };
+
+  const handleRequestJoinGame = async () => {
+    if (!user || user.isAnonymous) {
+      navigate('/login');
+      return;
+    }
+    try {
+      await requestJoinGame(game.id, user.uid);
+      setShareToast('📩 Request sent to the game host!');
+      setTimeout(() => setShareToast(''), 4000);
+    } catch (e) {
+      console.error('Failed to request join', e);
+      alert(e.message || 'Failed to request join');
+    }
+  };
+
   if (!game) return <div className="live-game-loading">Loading live stream...</div>;
 
   const scheduledDate = game.scheduledTime ? game.scheduledTime.toDate() : new Date();
@@ -285,6 +437,9 @@ export default function LiveGame() {
   const homeScore = game.score?.home || 0;
   const awayScore = game.score?.away || 0;
   const isHost = Boolean(user?.uid) && (user.uid === game.createdBy || user.uid === game.creatorId);
+  const isParticipant = Boolean(user?.uid) && (isHost || (game.currentPlayers || []).includes(user.uid));
+  const isGuest = contextIsGuest || !user || user.isAnonymous;
+  const shouldBlurChat = isGuest || !isParticipant;
   const handleBack = () => {
     if (window.history.length <= 2) {
       navigate(game?.courtId ? `/court/${game.courtId}` : '/');
@@ -312,6 +467,28 @@ export default function LiveGame() {
           )}
         </div>
       </header>
+
+      {shareToast && (
+        <div style={{
+          position: 'fixed',
+          top: '72px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'linear-gradient(135deg, #059669, #10b981)',
+          color: '#ffffff',
+          padding: '10px 18px',
+          borderRadius: '30px',
+          fontWeight: '700',
+          fontSize: '0.85rem',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+          zIndex: 9999,
+          textAlign: 'center',
+          maxWidth: '90%',
+          border: '1px solid rgba(255,255,255,0.2)'
+        }}>
+          {shareToast}
+        </div>
+      )}
 
       <div 
         className="lg-video-placeholder"
@@ -390,7 +567,9 @@ export default function LiveGame() {
                     </span>
                   )}:
                 </span>
-                <span className="lg-chat-text">{renderMessageText(msg.text)}</span>
+                <span className="lg-chat-text" style={shouldBlurChat ? { filter: 'blur(4px)', opacity: 0.6, userSelect: 'none', pointerEvents: 'none' } : {}}>
+                  {shouldBlurChat ? msg.text.replace(/[^\s]/g, '█') : renderMessageText(msg.text)}
+                </span>
               </div>
             );
           })}
@@ -439,13 +618,112 @@ export default function LiveGame() {
             </button>
           </div>
         )}
-        {isHost && !isOver && !isCancelled && (
-          <div style={{ padding: '10px 16px', background: 'var(--surface-base)' }}>
-            <button 
-              onClick={handleCancelGame} 
-              style={{ width: '100%', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', fontWeight: 'bold' }}>
-              Cancel Game
-            </button>
+        {/* Host Controls Panel (Always available to Game Creator for active & past hosted games) */}
+        {isHost ? (
+          <div style={{ padding: '12px 16px', background: 'var(--surface-base)', borderTop: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: '800', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                👑 Host Tools {isOver ? '(Past Hosted Game)' : isCancelled ? '(Cancelled)' : ''}
+              </span>
+              <span style={{ fontSize: '0.75rem', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', background: (game?.isInviteOnly || game?.privacyMode === 'invite_only') ? 'rgba(139, 92, 246, 0.2)' : game?.isPrivate ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 197, 94, 0.15)', color: (game?.isInviteOnly || game?.privacyMode === 'invite_only') ? '#c4b5fd' : game?.isPrivate ? '#f59e0b' : '#22c55e', border: `1px solid ${(game?.isInviteOnly || game?.privacyMode === 'invite_only') ? 'rgba(139, 92, 246, 0.45)' : game?.isPrivate ? 'rgba(245, 158, 11, 0.3)' : 'rgba(34, 197, 94, 0.3)'}` }}>
+                {(game?.isInviteOnly || game?.privacyMode === 'invite_only') ? '🔒 Invite-Only (Hidden)' : game?.isPrivate ? '🔒 Gatekept (Request to Join)' : '🌐 Public Match'}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={handleShareGame} 
+                className="primary-btn"
+                style={{ flex: 1.2, padding: '11px 12px', fontSize: '0.86rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '10px' }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+                Share Match Invite
+              </button>
+              <button 
+                onClick={handleTogglePrivate} 
+                style={{ flex: 1, padding: '11px 10px', background: 'var(--surface-card)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontWeight: '700', fontSize: '0.82rem' }}>
+                {(game?.isInviteOnly || game?.privacyMode === 'invite_only') ? '🔓 Switch to Public' : game?.isPrivate ? '🔒 Switch to Invite-Only' : '🛡️ Make Gatekept'}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={() => setShowParticipantsModal(true)} 
+                style={{ flex: 1, padding: '11px 12px', background: 'var(--surface-card)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontWeight: '700', fontSize: '0.82rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                👥 Manage Roster & Kick {game?.isPrivate && requestsList.length > 0 && <span style={{ background: 'var(--accent-secondary)', color: '#fff', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '10px' }}>{requestsList.length} req</span>}
+              </button>
+              {!isCancelled && !isOver && (
+                <button 
+                  onClick={handleCancelGame} 
+                  style={{ padding: '11px 14px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', fontWeight: '700', fontSize: '0.82rem' }}>
+                  Cancel
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Non-host viewers (Participants or prospective joiners) */
+          <div style={{ padding: '10px 16px', background: 'var(--surface-base)', borderTop: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={handleShareGame} 
+                style={{ flex: 1, padding: '10px 14px', background: 'var(--surface-card)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontWeight: '700', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                🔗 Share Match Invite
+              </button>
+              <button 
+                onClick={() => setShowParticipantsModal(true)} 
+                style={{ flex: 1, padding: '10px 14px', background: 'var(--surface-card)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontWeight: '700', fontSize: '0.85rem' }}>
+                👥 View Roster ({participantsList.length})
+              </button>
+            </div>
+
+            {/* If user is not yet a participant and game is active */}
+            {!isParticipant && !isOver && !isCancelled && (
+              isGuest ? (
+                <button 
+                  onClick={() => navigate('/login')} 
+                  className="primary-btn"
+                  style={{ width: '100%', padding: '12px', borderRadius: '10px', fontWeight: '800', fontSize: '0.9rem' }}>
+                  ⚡ Sign In with Google / Email to Join
+                </button>
+              ) : (game?.invitedPlayers || []).includes(user?.uid) ? (
+                <button 
+                  onClick={handleJoinGame} 
+                  className="primary-btn" 
+                  style={{ width: '100%', padding: '12px', borderRadius: '10px', fontWeight: '800' }}>
+                  ⚡ Accept Invite & Join Match Now
+                </button>
+              ) : (game?.isInviteOnly || game?.privacyMode === 'invite_only') ? (
+                <button disabled className="secondary-btn" style={{ width: '100%', padding: '12px', borderRadius: '10px' }}>
+                  🔒 Invite-Only Match (Host Invitation Required)
+                </button>
+              ) : game?.isPrivate ? (
+                game?.joinRequests?.includes(user?.uid) ? (
+                  <button disabled className="secondary-btn" style={{ width: '100%', padding: '12px', borderRadius: '10px' }}>
+                    ⏳ Join Request Sent (Awaiting Host)
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleRequestJoinGame} 
+                    className="primary-btn" 
+                    style={{ width: '100%', padding: '12px', borderRadius: '10px', fontWeight: '800' }}>
+                    🔒 Request to Join Private Match
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={handleJoinGame} 
+                  className="primary-btn" 
+                  style={{ width: '100%', padding: '12px', borderRadius: '10px', fontWeight: '800' }}>
+                  ⚡ Join Match Now
+                </button>
+              )
+            )}
           </div>
         )}
       </div>
@@ -487,7 +765,7 @@ export default function LiveGame() {
                             size={44} 
                           />
                         </div>
-                        <div className="pm-player-info">
+                        <div className="pm-player-info" style={{ flex: 1 }}>
                           <div className="pm-player-top">
                             <span className="pm-player-name">{p.displayName || 'Player'}</span>
                             {p.isHost && <span className="pm-host-badge">HOST</span>}
@@ -496,12 +774,65 @@ export default function LiveGame() {
                             @{p.username || generateDefaultUsername(p.displayName, p.uid)}
                           </span>
                         </div>
+                        {isHost && !p.isHost && (
+                          <button 
+                            className="secondary-btn danger" 
+                            style={{ padding: '0.4rem 0.6rem', fontSize: '0.75rem', borderRadius: '8px' }}
+                            onClick={(e) => { e.stopPropagation(); handleKick(p.uid); }}
+                          >
+                            Kick
+                          </button>
+                        )}
                         {!isGuest && (
                           <div className="pm-arrow">→</div>
                         )}
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Requests Section for Host */}
+              {isHost && game?.isPrivate && requestsList.length > 0 && (
+                <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
+                  <h3 style={{ marginBottom: '1rem', color: 'var(--accent-secondary)' }}>Pending Requests ({requestsList.length})</h3>
+                  <div className="pm-list">
+                    {requestsList.map((p) => {
+                      const color = getUserColor(p.username || p.displayName);
+                      return (
+                        <div 
+                          key={p.uid} 
+                          className="pm-player-card"
+                          onClick={() => navigate(`/profile/${p.uid}`)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="pm-avatar-wrap">
+                            <Avatar avatarUrl={p.avatarUrl} name={p.displayName || 'Player'} size={44} />
+                          </div>
+                          <div className="pm-player-info" style={{ flex: 1 }}>
+                            <span className="pm-player-name">{p.displayName || 'Player'}</span>
+                            <span className="pm-player-handle" style={{ color }}>
+                              @{p.username || generateDefaultUsername(p.displayName, p.uid)}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button 
+                              style={{ background: 'var(--accent-primary)', color: '#000', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 'bold' }}
+                              onClick={(e) => { e.stopPropagation(); handleApprove(p.uid); }}
+                            >
+                              Approve
+                            </button>
+                            <button 
+                              style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '0.4rem 0.6rem', borderRadius: '8px' }}
+                              onClick={(e) => { e.stopPropagation(); handleDeny(p.uid); }}
+                            >
+                              Deny
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
