@@ -1,0 +1,215 @@
+.ifm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 18, 0.78);
+  backdrop-filter: blur(8px);
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ifm-modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: 82vh;
+  background: var(--surface-card, #111827);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.14));
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+}
+
+.ifm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ifm-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary, #fff);
+}
+
+.ifm-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.76rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.ifm-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--text-primary, #fff);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ifm-body {
+  padding: 14px 16px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ifm-search-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ifm-search-input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+  background: rgba(15, 23, 42, 0.75);
+  color: var(--text-primary, #fff);
+  font-size: 0.85rem;
+}
+
+.ifm-search-invite-btn {
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.16);
+  color: #38bdf8;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ifm-status-msg {
+  font-size: 0.78rem;
+  color: #38bdf8;
+  padding: 2px 4px;
+}
+
+.ifm-invite-all-btn {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(16, 185, 129, 0.14));
+  color: #4ade80;
+  font-weight: 800;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.ifm-invite-all-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(16, 185, 129, 0.22));
+}
+
+.ifm-section-label {
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, #94a3b8);
+  margin-top: 4px;
+}
+
+.ifm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ifm-friend-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ifm-friend-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ifm-friend-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ifm-friend-handle {
+  font-size: 0.76rem;
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.ifm-tap-invite-btn {
+  padding: 7px 13px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent-primary, #22c55e);
+  color: #051b11;
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.ifm-tap-invite-btn:hover:not(:disabled) {
+  transform: scale(1.03);
+}
+
+.ifm-tap-invite-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.ifm-badge {
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+
+.ifm-badge--joined {
+  background: rgba(34, 197, 94, 0.16);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.ifm-badge--invited {
+  background: rgba(139, 92, 246, 0.18);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.38);
+}
+
+.ifm-empty {
+  text-align: center;
+  padding: 20px 12px;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+

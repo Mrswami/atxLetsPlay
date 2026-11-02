@@ -298,6 +298,21 @@ export async function requestJoinGame(gameId, userId) {
   });
 }
 
+export async function cancelJoinRequest(gameId, userId) {
+  assertCanParticipate();
+  const gameRef = doc(db, 'games', gameId);
+  return runTransaction(db, async (transaction) => {
+    const gameDoc = await transaction.get(gameRef);
+    if (!gameDoc.exists()) throw new Error('Game does not exist');
+    const data = gameDoc.data();
+    const requests = data.joinRequests || [];
+    if (!requests.includes(userId)) return;
+    transaction.update(gameRef, {
+      joinRequests: requests.filter((id) => id !== userId)
+    });
+  });
+}
+
 export async function approveJoinRequest(gameId, targetUserId, hostId) {
   const gameRef = doc(db, 'games', gameId);
   return runTransaction(db, async (transaction) => {

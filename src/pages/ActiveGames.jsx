@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useAllActiveGames, joinGame, leaveGame, requestJoinGame } from '../hooks/useCourts';
+import { useAllActiveGames, joinGame, leaveGame, requestJoinGame, cancelJoinRequest } from '../hooks/useCourts';
 import { SPORT_META } from '../data/courtsMeta';
 import Loading from '../components/Loading';
 import VerifyEmailBanner from '../components/VerifyEmailBanner';
@@ -57,7 +57,7 @@ export default function ActiveGames() {
       if (isJoined) {
         await leaveGame(game.id, user.uid);
       } else if (hasRequested) {
-        return;
+        await cancelJoinRequest(game.id, user.uid);
       } else if (requiresRequest) {
         await requestJoinGame(game.id, user.uid);
       } else {
@@ -220,7 +220,7 @@ export default function ActiveGames() {
                 <div className="ag-card-actions">
                   <button
                     className={`ag-join-btn ${isJoined ? 'leave' : ''} ${hasRequested ? 'requested' : ''} ${isPartner ? 'partner-btn' : ''}`}
-                    disabled={(spotsLeft === 0 && !isJoined && !isPartner && !requiresRequest) || hasRequested}
+                    disabled={spotsLeft === 0 && !isJoined && !hasRequested && !isPartner && !requiresRequest}
                     onClick={() => handleGameAction(game)}
                     id={`ag-join-${game.id}`}
                     style={hasRequested ? { background: 'transparent', border: '1px solid var(--text-secondary)', color: 'var(--text-secondary)' } : {}}
@@ -230,7 +230,7 @@ export default function ActiveGames() {
                       : isJoined
                       ? 'LEAVE GAME'
                       : hasRequested
-                      ? '⏳ REQUEST SENT'
+                      ? '⏳ REQUEST SENT · TAP TO CANCEL'
                       : requiresRequest
                       ? '🔒 REQUEST TO JOIN'
                       : spotsLeft === 0

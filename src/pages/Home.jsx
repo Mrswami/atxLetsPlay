@@ -6,7 +6,7 @@ import Avatar from '../components/Avatar';
 import NotificationsBell from '../components/NotificationsBell';
 import AustinStreetMap from '../components/AustinStreetMap';
 import GameSlotsRow from '../components/GameSlotsRow';
-import { useAllActiveGames, joinGame, leaveGame, requestJoinGame } from '../hooks/useCourts';
+import { useAllActiveGames, joinGame, leaveGame, requestJoinGame, cancelJoinRequest } from '../hooks/useCourts';
 import { SPORT_META, AUSTIN_COURTS_DATA } from '../data/courtsMeta';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -63,7 +63,8 @@ export default function Home() {
         await leaveGame(game.id, user.uid);
         setToast({ type: 'success', message: 'You left the game.' });
       } else if (hasRequested) {
-        return;
+        await cancelJoinRequest(game.id, user.uid);
+        setToast({ type: 'success', message: 'Join request cancelled.' });
       } else if (requiresRequest) {
         await requestJoinGame(game.id, user.uid);
         setToast({ type: 'success', message: '🔒 Request to join sent to host!' });
@@ -493,7 +494,7 @@ export default function Home() {
                     <button 
                       className={`haf-rsvp-btn ${isJoined ? 'leave' : ''} ${hasRequested ? 'requested' : ''}`}
                       onClick={(e) => handleFeedRSVP(e, game)}
-                      disabled={isOver || hasRequested || (!isJoined && !requiresRequest && spotsLeft <= 0)}
+                      disabled={isOver || (!isJoined && !hasRequested && !requiresRequest && spotsLeft <= 0)}
                       style={{
                         display: isOver ? 'none' : 'block',
                         ...(hasRequested ? { background: 'transparent', border: '1px solid var(--text-secondary)', color: 'var(--text-secondary)' } : {})
@@ -502,7 +503,7 @@ export default function Home() {
                       {isJoined
                         ? 'LEAVE'
                         : hasRequested
-                        ? '⏳ REQUEST SENT'
+                        ? '⏳ CANCEL REQUEST'
                         : requiresRequest
                         ? '🔒 REQUEST TO JOIN'
                         : spotsLeft <= 0

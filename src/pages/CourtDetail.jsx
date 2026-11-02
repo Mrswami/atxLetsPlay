@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useCourt, useCourtGames, joinGame, leaveGame, requestJoinGame } from '../hooks/useCourts';
+import { useCourt, useCourtGames, joinGame, leaveGame, requestJoinGame, cancelJoinRequest } from '../hooks/useCourts';
 import NoShowPanel from '../components/NoShowPanel';
 import { useAuth } from '../contexts/AuthContext';
 import { SPORT_META, getCartoonImageUrl } from '../data/courtsMeta';
@@ -49,7 +49,8 @@ export default function CourtDetail() {
       if (isJoined) {
         await leaveGame(game.id, user.uid);
       } else if (hasRequested) {
-        // Option to cancel request could be added here, but for now we do nothing
+        await cancelJoinRequest(game.id, user.uid);
+        setActionError('Join request cancelled.');
         return;
       } else if (game.isPrivate && !Boolean(game.isInviteOnly || game.privacyMode === 'invite_only') && game.createdBy !== user.uid && game.hostId !== user.uid && !(game.invitedPlayers || []).includes(user.uid)) {
         await requestJoinGame(game.id, user.uid);
@@ -390,7 +391,7 @@ function GameCard({ game, userId, onAction }) {
       
       <button
         className={`game-join-btn ${isJoined ? 'leave' : ''} ${hasRequested ? 'requested' : ''} ${isPartner ? 'partner-btn' : ''}`}
-        disabled={(spotsLeft === 0 && !isJoined && !isPartner) || hasRequested}
+        disabled={spotsLeft === 0 && !isJoined && !hasRequested && !isPartner && !(game.isPrivate && !isInviteOnly && !isHostOrInvited)}
         onClick={onAction}
         id={`join-game-${game.id}`}
         style={hasRequested ? { background: 'transparent', border: '1px solid var(--text-secondary)', color: 'var(--text-secondary)' } : {}}
@@ -400,7 +401,7 @@ function GameCard({ game, userId, onAction }) {
           : isJoined
           ? 'LEAVE GAME'
           : hasRequested
-          ? '⏳ REQUEST SENT'
+          ? '⏳ REQUEST SENT · TAP TO CANCEL'
           : game.isPrivate && !isInviteOnly && !isHostOrInvited
           ? '🔒 REQUEST TO JOIN'
           : spotsLeft === 0

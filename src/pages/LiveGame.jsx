@@ -19,8 +19,9 @@ import { getCartoonImageUrl } from '../data/courtsMeta';
 import { generateDefaultUsername } from '../utils/usernameGenerator';
 import { processChatMentions } from '../services/invites';
 import { filterProfanity } from '../utils/profanityFilter';
-import { approveJoinRequest, denyJoinRequest, kickPlayer, joinGame, requestJoinGame } from '../hooks/useCourts';
+import { approveJoinRequest, denyJoinRequest, kickPlayer, joinGame, requestJoinGame, cancelJoinRequest } from '../hooks/useCourts';
 import Avatar from '../components/Avatar';
+import InviteFriendsModal from '../components/InviteFriendsModal';
 import './LiveGame.css';
 
 const USER_COLORS = ['#38bdf8', '#22d366', '#a78bfa', '#f59e0b', '#ec4899', '#f97316', '#06b6d4'];
@@ -45,6 +46,7 @@ export default function LiveGame() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestionFilter, setSuggestionFilter] = useState('');
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [showInviteFriendsModal, setShowInviteFriendsModal] = useState(false);
   const [participantsList, setParticipantsList] = useState([]);
   const [requestsList, setRequestsList] = useState([]);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
@@ -429,6 +431,18 @@ export default function LiveGame() {
     }
   };
 
+  const handleCancelJoinRequest = async () => {
+    if (!user || user.isAnonymous) return;
+    try {
+      await cancelJoinRequest(game.id, user.uid);
+      setShareToast('✕ Join request cancelled.');
+      setTimeout(() => setShareToast(''), 3500);
+    } catch (e) {
+      console.error('Failed to cancel request', e);
+      alert(e.message || 'Failed to cancel request');
+    }
+  };
+
   if (!game) return <div className="live-game-loading">Loading live stream...</div>;
 
   const scheduledDate = game.scheduledTime ? game.scheduledTime.toDate() : new Date();
@@ -632,22 +646,20 @@ export default function LiveGame() {
 
             <div style={{ display: 'flex', gap: '8px' }}>
               <button 
-                onClick={handleShareGame} 
+                onClick={() => setShowInviteFriendsModal(true)} 
                 className="primary-btn"
-                style={{ flex: 1.2, padding: '11px 12px', fontSize: '0.86rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '10px' }}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="18" cy="5" r="3"></circle>
-                  <circle cx="6" cy="12" r="3"></circle>
-                  <circle cx="18" cy="19" r="3"></circle>
-                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                </svg>
-                Share Match Invite
+                style={{ flex: 1.15, padding: '11px 12px', fontSize: '0.84rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '10px' }}>
+                🎯 Invite Squad
+              </button>
+              <button 
+                onClick={handleShareGame} 
+                style={{ flex: 1, padding: '11px 10px', background: 'var(--surface-card)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontWeight: '700', fontSize: '0.82rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                🔗 Share Link
               </button>
               <button 
                 onClick={handleTogglePrivate} 
-                style={{ flex: 1, padding: '11px 10px', background: 'var(--surface-card)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontWeight: '700', fontSize: '0.82rem' }}>
-                {(game?.isInviteOnly || game?.privacyMode === 'invite_only') ? '🔓 Switch to Public' : game?.isPrivate ? '🔒 Switch to Invite-Only' : '🛡️ Make Gatekept'}
+                style={{ flex: 1, padding: '11px 10px', background: 'var(--surface-card)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontWeight: '700', fontSize: '0.8rem' }}>
+                {(game?.isInviteOnly || game?.privacyMode === 'invite_only') ? '🔓 Public' : game?.isPrivate ? '🔒 Invite-Only' : '🛡️ Gatekept'}
               </button>
             </div>
 
@@ -704,8 +716,12 @@ export default function LiveGame() {
                 </button>
               ) : game?.isPrivate ? (
                 game?.joinRequests?.includes(user?.uid) ? (
-                  <button disabled className="secondary-btn" style={{ width: '100%', padding: '12px', borderRadius: '10px' }}>
-                    ⏳ Join Request Sent (Awaiting Host)
+                  <button
+                    onClick={handleCancelJoinRequest}
+                    className="secondary-btn"
+                    style={{ width: '100%', padding: '12px', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    ⏳ Request Sent (Tap to Cancel Request)
                   </button>
                 ) : (
                   <button 
@@ -838,6 +854,20 @@ export default function LiveGame() {
             </div>
           </div>
         </div>
+      )}
+      {/* Direct Invite Friends / Squad Modal */}
+      {showInviteFriendsModal && (
+        <InviteFriendsModal
+          game={game}
+          user={user}
+          userProfile={userProfile}
+          availableUsernames={availableUsernames}
+          onClose={() => setShowInviteFriendsModal(false)}
+          onInviteSent={(msg) => {
+            setShareToast(msg);
+            setTimeout(() => setShareToast(''), 3500);
+          }}
+        />
       )}
     </div>
   );
