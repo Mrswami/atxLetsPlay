@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getUserFriendships, sendFriendRequest, acceptFriendRequest, removeFriendOrRequest } from '../services/friends';
 import { subscribeToUserInvites, respondToInvite } from '../services/invites';
-import { joinGame } from '../hooks/useCourts';
+import { joinGame, approveJoinRequest, denyJoinRequest } from '../hooks/useCourts';
 import { generateDefaultUsername } from '../utils/usernameGenerator';
 import Avatar from '../components/Avatar';
 import './Friends.css';
@@ -17,7 +17,7 @@ export default function Friends() {
   const targetUid = location.state?.targetUid || (user ? user.uid : null);
   const isOwnView = targetUid === user?.uid;
 
-  const [activeTab, setActiveTab] = useState('list'); // 'list' | 'search' | 'requests'
+  const [activeTab, setActiveTab] = useState(location.state?.initialTab || 'list'); // 'list' | 'search' | 'requests'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResult, setSearchResult] = useState(null);
   const [searchError, setSearchError] = useState('');
@@ -55,6 +55,7 @@ export default function Friends() {
   };
 
   const [courtInvites, setCourtInvites] = useState([]);
+  const [hostJoinRequests, setHostJoinRequests] = useState([]);
 
   useEffect(() => {
     if (!user || user.isAnonymous) return;
@@ -63,6 +64,65 @@ export default function Friends() {
     });
     return unsub;
   }, [user]);
+
+  useEffect(() => {
+    if (!user || user.isAnonymous) return;
+    const hostQ = query(collection(db, 'games'), where('createdBy', '==', user.uid));
+    const unsubHost = onSnapshot(hostQ, async (snap) => {
+      const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
+      const items = [];
+      for (const d of snap.docs) {
+        const g = d.data();
+        if (g.status === 'cancelled') continue;
+        const schedMs = g.scheduledTime?.toMillis
+          ? g.scheduledTime.toMillis()
+          : g.scheduledTime
+          ? new Date(g.scheduledTime).getTime()
+          : Date.now();
+        if (schedMs < twoHoursAgo) continue;
+        const reqUids = Array.isArray(g.joinRequests) ? g.joinRequests : [];
+        for (const reqUid of reqUids) {
+          let reqProf = profiles[reqUid];
+          if (!reqProf) {
+            try {
+              const pSnap = await getDoc(doc(db, 'users', reqUid));
+              if (pSnap.exists()) reqProf = pSnap.data();
+            } catch (e) {}
+          }
+          items.push({
+            key: `${d.id}_${reqUid}`,
+            gameId: d.id,
+            courtName: g.courtName || 'Austin Court',
+            sport: g.sport || 'pickup',
+            requesterUid: reqUid,
+            requesterName: reqProf?.displayName || 'Player',
+            requesterUsername: reqProf?.username || generateDefaultUsername(reqProf?.displayName || 'Player', reqUid),
+            requesterAvatar: reqProf?.avatarUrl || '',
+          });
+        }
+      }
+      setHostJoinRequests(items);
+    }, () => {});
+    return unsubHost;
+  }, [user]);
+
+  const handleApproveHostRequest = async (reqItem) => {
+    try {
+      await approveJoinRequest(reqItem.gameId, reqItem.requesterUid, user.uid);
+      triggerToast(`Approved @${reqItem.requesterUsername} for ${reqItem.courtName}!`);
+    } catch (e) {
+      triggerToast(e.message || 'Could not approve request.');
+    }
+  };
+
+  const handleDenyHostRequest = async (reqItem) => {
+    try {
+      await denyJoinRequest(reqItem.gameId, reqItem.requesterUid, user.uid);
+      triggerToast('Join request declined.');
+    } catch (e) {
+      triggerToast(e.message || 'Could not decline request.');
+    }
+  };
 
   const handleAcceptCourtInvite = async (invite) => {
     try {
@@ -192,6 +252,18 @@ export default function Friends() {
     triggerToast(`Friend request ${actionLabel}.`);
   };
 
+  const [friendToRemove, setFriendToRemove] = useState(null);
+
+  const confirmRemove = (fId, otherId, name) => {
+    setFriendToRemove({ fId, otherId, name });
+  };
+
+  const executeRemove = async () => {
+    if (!friendToRemove) return;
+    await onRejectOrRemove(friendToRemove.fId, friendToRemove.otherId, 'removed');
+    setFriendToRemove(null);
+  };
+
   const acceptedFriends = friendships.filter(f => f.status === 'accepted');
   const pendingRequests = friendships.filter(f => f.status === 'pending' && f.actionUser !== user.uid); // Received
   const sentRequests = friendships.filter(f => f.status === 'pending' && f.actionUser === user.uid); // Sent
@@ -214,7 +286,7 @@ export default function Friends() {
           <button className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`} onClick={() => setActiveTab('list')}>My Squad</button>
           <button className={`tab-btn ${activeTab === 'search' ? 'active' : ''}`} onClick={() => setActiveTab('search')}>Add Friend</button>
           <button className={`tab-btn ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>
-            Requests {(pendingRequests.length + courtInvites.length) > 0 && <span className="req-badge">{pendingRequests.length + courtInvites.length}</span>}
+            Requests {(pendingRequests.length + courtInvites.length + hostJoinRequests.length) > 0 && <span className="req-badge">{pendingRequests.length + courtInvites.length + hostJoinRequests.length}</span>}
           </button>
         </div>
       )}
@@ -256,9 +328,14 @@ export default function Friends() {
                             <span>@{handle}</span>
                           </div>
                           {isOwnView && (
-                            <button className="fc-remove" onClick={(e) => { e.stopPropagation(); onRejectOrRemove(f.id, otherId, 'removed'); }}>
-                              Remove
-                            </button>
+                            <div className="fc-actions" style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                              <button className="fc-msg-btn" style={{ flex: 1, padding: '0.4rem', borderRadius: '8px', border: '1px solid var(--accent-primary)', background: 'transparent', color: 'var(--text-primary)' }} onClick={(e) => { e.stopPropagation(); navigate(`/chat/${otherId}`); }}>
+                                💬 Message
+                              </button>
+                              <button className="fc-remove" style={{ flex: 1, padding: '0.4rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-secondary)' }} onClick={(e) => { e.stopPropagation(); confirmRemove(f.id, otherId, prof.displayName || 'Player'); }}>
+                                Remove
+                              </button>
+                            </div>
                           )}
                         </div>
                       );
@@ -311,6 +388,34 @@ export default function Friends() {
 
             {activeTab === 'requests' && isOwnView && (
               <div className="friends-requests-tab">
+                {hostJoinRequests.length > 0 && (
+                  <div style={{ marginBottom: '2rem' }}>
+                    <h3 style={{ color: '#f59e0b' }}>🔒 Match Join Requests (Host Approval)</h3>
+                    <div className="friends-grid">
+                      {hostJoinRequests.map((reqItem) => (
+                        <div
+                          key={reqItem.key}
+                          className="friend-card req-card"
+                          style={{ border: '1px solid rgba(245, 158, 11, 0.45)', background: 'linear-gradient(145deg, #1e293b, #0f172a)' }}
+                          onClick={() => navigate(`/live-game/${reqItem.gameId}`)}
+                        >
+                          <Avatar url={reqItem.requesterAvatar} name={reqItem.requesterName} size="medium" />
+                          <div className="fc-info">
+                            <h4>{reqItem.requesterName} (@{reqItem.requesterUsername})</h4>
+                            <span style={{ color: '#fbbf24', fontWeight: '600' }}>
+                              Wants to join {reqItem.sport} @ {reqItem.courtName}
+                            </span>
+                          </div>
+                          <div className="fc-actions">
+                            <button className="fc-accept" onClick={(e) => { e.stopPropagation(); handleApproveHostRequest(reqItem); }}>Approve</button>
+                            <button className="fc-decline" onClick={(e) => { e.stopPropagation(); handleDenyHostRequest(reqItem); }}>Deny</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {courtInvites.length > 0 && (
                   <div style={{ marginBottom: '2rem' }}>
                     <h3 style={{ color: 'var(--accent-primary)' }}>🏟️ Court Invites & Mentions</h3>
@@ -389,6 +494,26 @@ export default function Friends() {
           </>
         )}
       </div>
+
+      {friendToRemove && (
+        <div className="friend-modal-overlay" onClick={() => setFriendToRemove(null)}>
+          <div className="friend-modal-content anim-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="friend-modal-icon warning">💔</div>
+            <h3>Remove Friend?</h3>
+            <p>
+              Are you sure you want to remove <strong>{friendToRemove.name}</strong> from your squad?
+            </p>
+            <div className="friend-modal-actions">
+              <button className="secondary-btn danger" onClick={executeRemove}>
+                Yes, Remove
+              </button>
+              <button className="primary-btn" onClick={() => setFriendToRemove(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
